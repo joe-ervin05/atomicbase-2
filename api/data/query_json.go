@@ -204,7 +204,7 @@ func (table CacheTable) buildFilterClause(column string, filter map[string]any, 
 			if val == nil {
 				return fmt.Sprintf("[%s].[%s] IS NULL ", tableName, colName), nil, nil
 			}
-			return fmt.Sprintf("[%s].[%s] IS %v ", tableName, colName, val), nil, nil
+			return fmt.Sprintf("[%s].[%s] IS ? ", tableName, colName), []any{val}, nil
 		case OpIn:
 			arr, ok := val.([]any)
 			if !ok {
@@ -270,7 +270,7 @@ func (table CacheTable) buildNotFilterClauseWithTable(tableName, colName string,
 			if val == nil {
 				return fmt.Sprintf("[%s].[%s] IS NOT NULL ", tableName, colName), nil, nil
 			}
-			return fmt.Sprintf("[%s].[%s] IS NOT %v ", tableName, colName, val), nil, nil
+			return fmt.Sprintf("[%s].[%s] IS NOT ? ", tableName, colName), []any{val}, nil
 		case OpLike:
 			return fmt.Sprintf("[%s].[%s] NOT LIKE ? ", tableName, colName), []any{val}, nil
 		case OpGlob:

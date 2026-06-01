@@ -208,3 +208,89 @@ func TestInsertJSON_MultiRowInsertEvaluatesNewPolicyPerRow(t *testing.T) {
 		t.Fatalf("expected no inserted rows after failed multi-row policy check, got %d", count)
 	}
 }
+
+func TestUpsertJSON_RequiresUpdatePolicyForConflictingRows(t *testing.T) {
+	dao, primaryDB, tenantDB := setupPolicyDAO(t, definitions.Principal{
+		UserID:     "user-1",
+		AuthStatus: definitions.AuthStatusAuthenticated,
+	})
+	defer primaryDB.Close()
+	defer tenantDB.Close()
+
+	insertAccessPolicy(t, primaryDB, "posts", "insert", `{"field":"new.author_id","op":"eq","value":"auth.id"}`)
+	insertAccessPolicy(t, primaryDB, "posts", "update", `{"field":"old.author_id","op":"eq","value":"auth.id"}`)
+
+	if _, err := tenantDB.Exec(`INSERT INTO posts (id, user_id, author_id, title) VALUES (1, 1, 'user-2', 'locked')`); err != nil {
+		t.Fatal(err)
+	}
+
+	resp, err := dao.UpsertJSON(context.Background(), "posts", UpsertRequest{
+		Data: []map[string]any{{
+			"id":        1,
+			"user_id":   1,
+			"author_id": "user-1",
+			"title":     "takeover",
+		}},
+	})
+	if err == nil {
+		t.Fatalf("expected unauthorized upsert to fail, got response %s", string(resp))
+	}
+
+	var title, authorID string
+	if err := tenantDB.QueryRow(`SELECT title, author_id FROM posts WHERE id = 1`).Scan(&title, &authorID); err != nil {
+		t.Fatal(err)
+	}
+	if title != "locked" || authorID != "user-2" {
+		t.Fatalf("conflicting row should remain unchanged, got title=%q author_id=%q", title, authorID)
+	}
+
+	resp, err = dao.UpsertJSON(context.Background(), "posts", UpsertRequest{
+		Data: []map[string]any{{
+			"id":        2,
+			"user_id":   1,
+			"author_id": "user-1",
+			"title":     "new row",
+		}},
+	})
+	if err != nil {
+		t.Fatalf("expected non-conflicting upsert to succeed: %v", err)
+	}
+
+	var body map[string]any
+	if err := json.Unmarshal(resp, &body); err != nil {
+		t.Fatal(err)
+	}
+	if body["rows_affected"].(float64) != 1 {
+		t.Fatalf("expected one inserted row, got %#v", body)
+	}
+}
+
+func TestUpsertJSON_RejectsDuplicateRequestKeysBeforePolicyBypass(t *testing.T) {
+	dao, primaryDB, tenantDB := setupPolicyDAO(t, definitions.Principal{
+		UserID:     "user-1",
+		AuthStatus: definitions.AuthStatusAuthenticated,
+	})
+	defer primaryDB.Close()
+	defer tenantDB.Close()
+
+	insertAccessPolicy(t, primaryDB, "posts", "insert", `{"field":"new.author_id","op":"eq","value":"auth.id"}`)
+	insertAccessPolicy(t, primaryDB, "posts", "update", `{"field":"old.author_id","op":"eq","value":"never"}`)
+
+	resp, err := dao.UpsertJSON(context.Background(), "posts", UpsertRequest{
+		Data: []map[string]any{
+			{"id": 1, "user_id": 1, "author_id": "user-1", "title": "first"},
+			{"id": 1, "user_id": 1, "author_id": "user-1", "title": "second"},
+		},
+	})
+	if err == nil {
+		t.Fatalf("expected duplicate-key upsert to fail, got response %s", string(resp))
+	}
+
+	var count int
+	if err := tenantDB.QueryRow(`SELECT COUNT(*) FROM posts`).Scan(&count); err != nil {
+		t.Fatal(err)
+	}
+	if count != 0 {
+		t.Fatalf("duplicate-key upsert should not insert or update rows, got %d rows", count)
+	}
+}

@@ -2,6 +2,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -66,11 +67,14 @@ func init() {
 	// Load .env file before reading config (ignore error if file doesn't exist)
 	godotenv.Load()
 	Cfg = Load()
+}
 
-	// Validate required Turso configuration
-	if Cfg.TursoOrganization != "" && Cfg.TokenEncryptionKey == "" {
-		panic("TOKEN_ENCRYPTION_KEY is required when TURSO_ORGANIZATION is set")
+// Validate checks config consistency and returns an error instead of panicking.
+func Validate(cfg Config) error {
+	if cfg.TursoOrganization != "" && cfg.TokenEncryptionKey == "" {
+		return fmt.Errorf("TOKEN_ENCRYPTION_KEY is required when TURSO_ORGANIZATION is set")
 	}
+	return nil
 }
 
 // Load reads configuration from environment variables with sensible defaults.

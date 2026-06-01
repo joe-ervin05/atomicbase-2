@@ -1,14 +1,14 @@
-# Atomicbase Authentication Overview
+# AtomBase Authentication Overview
 
 > [!CAUTION]
 > Historical design overview. This document predates the current definitions-first SDK surface in places. For current definition authoring and browser auth flow, use `docs/definition-model.md`, `api/README.md`, and `packages/sdk/README.md`.
 
-This is an early overview of authentication in AtomicBase.
+This is an early overview of authentication in AtomBase.
 The plan for authentication is production-ready before we think about being enterprise-ready. That means no SSO, Phone-based MFA, Anonymous sign-ins, email OTP (magic link only), SOC2, HIPPA, or passkeys.
 
 ## 1. Structure
 
-There are 3 core objects in AtomicBase. Users, databases, and organizations. Databases and organizations adhere to strict structures and policies defined in code through definitions. This allows everything to stay in sync easily within complex multi-tenant systems and allows us to define granular access.
+There are 3 core objects in this historical auth design: users, databases, and organizations. In the current model, those live under `Project -> Definition -> Database -> Session/Auth Context -> Query`; users and organizations are part of session/auth context.
 
 ### Organizations
 
@@ -18,7 +18,7 @@ Note: by default, users can own a maximum of 1 organization and organizations ca
 
 ## 2. Authentication
 
-AtomicBase uses server-backed sessions to authenticate users on data requests. Users have roles defined by their organization. Every time a database is requested, it grabs the datbase's org, makes sure the user requesting is a part of it, and attaches their role to their request. 
+AtomBase uses server-backed sessions to authenticate users on data requests. Users have roles defined by their organization. Every time a database is requested, it resolves the database's organization, checks membership, and attaches the role to the request.
 
 Note: any email or password change for an existing account requires TOTP if enabled or email OTP if not for sessions older than 24 hours. This is configurable through project auth settings.
 
@@ -28,7 +28,7 @@ We offer email & password auth with functionality for signup, login, verifying e
 
 ### OAuth
 
-AtomicBase supports identity linking in two ways. First, a signed-in user may add a new identity to their account, provided their email is already verified; in this case, the new identity does not require separate email verification because the existing session proves account ownership. Second, a logged-out user may automatically link a new identity by signing in with it, but only if that identity has a verified email (e.g., verified OAuth). Automatic linking is never allowed for unverified identities. If an unverified account exists for an email and a verified identity later signs in with the same email, AtomicBase deletes the unverified account and preserves the verified one, ensuring that unverified pre-registrations cannot be used to hijack or block legitimate accounts.
+AtomBase supports identity linking in two ways. First, a signed-in user may add a new identity to their account, provided their email is already verified; in this case, the new identity does not require separate email verification because the existing session proves account ownership. Second, a logged-out user may automatically link a new identity by signing in with it, but only if that identity has a verified email (e.g., verified OAuth). Automatic linking is never allowed for unverified identities. If an unverified account exists for an email and a verified identity later signs in with the same email, AtomBase deletes the unverified account and preserves the verified one, ensuring that unverified pre-registrations cannot be used to hijack or block legitimate accounts.
 
 ### Magic link
 
@@ -40,11 +40,11 @@ A new session is created on every login and the current session is deleted on lo
 
 ### Rate-limiting
 
-AtomicBase provides sensible defaults for rate-limiting and pro plan users have the ability to customize these limits. AtomicBase relies on token buckets for authentication route rate limiting.
+AtomBase provides sensible defaults for rate-limiting and pro plan users have the ability to customize these limits. AtomBase relies on token buckets for authentication route rate limiting.
 
 ### MFA
 
-AtomicBase provides only TOTP-based MFA.
+AtomBase provides only TOTP-based MFA.
 
 ## 3. Authorization
 

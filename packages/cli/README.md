@@ -1,6 +1,6 @@
 # @atomicbase/cli
 
-Command-line interface for Atomicbase definition management.
+Command-line interface for AtomBase project, definition, and database management.
 
 ## Installation
 
@@ -45,7 +45,7 @@ Creates `atomicbase.config.ts` and `definitions/` directory.
 
 ### Definitions
 
-Manage definitions on the server.
+Manage project definitions on the server.
 
 ```bash
 # List all definitions
@@ -70,7 +70,7 @@ npx atomicbase definitions history <name>
 
 ### Databases
 
-Manage databases.
+Manage project databases.
 
 ```bash
 # List all databases
@@ -146,4 +146,4 @@ npx atomicbase --insecure definitions list
 
 ## License
 
-Atomicbase is [fair-source](https://fair.io) licensed under [FSL-1.1-MIT](../../LICENSE).
+AtomBase is [fair-source](https://fair.io) licensed under [FSL-1.1-MIT](../../LICENSE).

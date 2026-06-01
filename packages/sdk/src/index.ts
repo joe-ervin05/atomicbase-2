@@ -3,6 +3,7 @@
 // =============================================================================
 
 export { AtomicbaseClient, DatabaseClient, createClient } from "./AtomicbaseClient.js";
+export { AtomicbaseClient as AtomBaseClient } from "./AtomicbaseClient.js";
 export { DatabasesClient } from "./DatabasesClient.js";
 export { DefinitionsClient } from "./DefinitionsClient.js";
 export { AuthClient, OrganizationAuthClient } from "./AuthClient.js";
@@ -13,12 +14,15 @@ export { AuthClient, OrganizationAuthClient } from "./AuthClient.js";
 
 export { AtomicbaseBuilder } from "./AtomicbaseBuilder.js";
 export { AtomicbaseQueryBuilder } from "./AtomicbaseQueryBuilder.js";
+export { AtomicbaseBuilder as AtomBaseBuilder } from "./AtomicbaseBuilder.js";
+export { AtomicbaseQueryBuilder as AtomBaseQueryBuilder } from "./AtomicbaseQueryBuilder.js";
 
 // =============================================================================
 // Error
 // =============================================================================
 
 export { AtomicbaseError } from "./AtomicbaseError.js";
+export { AtomicbaseError as AtomBaseError } from "./AtomicbaseError.js";
 
 // =============================================================================
 // Filter Functions (for complex conditions with where())
@@ -110,4 +114,13 @@ export type {
   UpdateOrganizationMemberOptions,
   UpdateOrganizationOptions,
   TransferOrganizationOwnershipOptions,
+} from "./types.js";
+
+export type {
+  AtomicbaseResponse as AtomBaseResponse,
+  AtomicbaseResponseSuccess as AtomBaseResponseSuccess,
+  AtomicbaseResponseFailure as AtomBaseResponseFailure,
+  AtomicbaseResponseWithCount as AtomBaseResponseWithCount,
+  AtomicbaseBatchResponse as AtomBaseBatchResponse,
+  AtomicbaseClientOptions as AtomBaseClientOptions,
 } from "./types.js";

@@ -157,10 +157,10 @@ export class DatabaseClient {
 }
 
 /**
- * Atomicbase client for multi-database operations.
+ * AtomBase client for multi-database operations.
  * Use `.database()` to get a database-scoped client for querying.
- * Use `.definitions` and `.databases` for service-key platform actions.
- * Use `.auth` and `.orgs` for auth/session-backed actions.
+ * Use `.definitions` and `.databases` for project-scoped actions.
+ * Use `.auth` and `.orgs` for session/auth-context actions.
  *
  * @example
  * ```ts
@@ -196,7 +196,7 @@ export class AtomicbaseClient {
   private readonly fetchFn: typeof fetch;
 
   /**
-   * Client for managing databases (CRUD operations).
+   * Client for managing project databases.
    *
    * @example
    * ```ts
@@ -287,7 +287,7 @@ export class AtomicbaseClient {
 }
 
 /**
- * Create an Atomicbase client.
+ * Create an AtomBase client.
  *
  * @example
  * ```ts

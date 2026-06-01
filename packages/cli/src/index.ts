@@ -18,7 +18,7 @@ const program = new Command();
 
 program
   .name("atomicbase")
-  .description("CLI for Atomicbase definition management")
+  .description("CLI for AtomBase project, definition, and database management")
   .version("0.1.0")
   .option("-k, --insecure", "Skip SSL certificate verification")
   .hook("preAction", (thisCommand) => {

@@ -1,6 +1,9 @@
 
 # Authentication Prototype Plan
 
+> [!CAUTION]
+> Historical prototype notes. This document predates the current definition-first model. Use `docs/core-model.md`, `docs/definition-model.md`, and `api/README.md` as the current source of truth.
+
 The authentication prototype will be very focused and missing many core features. There will be no grants system, only API-key auth for server-side requests. We will include organizations but essentially just as a way to group users and create roles. No real auth functionality for them yet.
 
 Note: Since auth tables are internal only, we can add columns to them without causing any breaking changes to the client-facing APIs. We will try not to rename or remove columns though.
@@ -77,7 +80,7 @@ This prototype will not implement MFA or passkeys. Passkeys will be a post-launc
 
 ## Organizations
 
-Organizations follow templates just like Databases do. For the prototype, organization templates will just define the structure of an organization (its databases, roles, etc). Eventually we will have a grants system for organizations as well.
+Organizations follow definitions just like databases do. For the prototype, organization definitions describe the structure of an organization database, roles, and related auth context.
 
 Organizations model:
 
@@ -85,7 +88,7 @@ Organizations model:
 CREATE TABLE organizations (
     id TEXT NOT NULL PRIMARY KEY,
     [name] TEXT UNIQUE NOT NULL,
-    [template_id] INTEGER NOT NULL
+    [definition_id] INTEGER NOT NULL
 );
 
 CREATE TABLE organizations_users (

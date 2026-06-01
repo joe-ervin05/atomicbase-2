@@ -1,7 +1,7 @@
 {
   "name": "@atomicbase/cli",
   "version": "0.1.0",
-  "description": "CLI for Atomicbase schema management",
+  "description": "CLI for AtomBase project, definition, and database management",
   "type": "module",
   "bin": {
     "atomicbase": "./bin/atomicbase.js"

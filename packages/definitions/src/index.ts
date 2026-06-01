@@ -2,7 +2,7 @@
 // Schema Definition SDK
 // =============================================================================
 //
-// TypeScript-first schema definitions for Atomicbase definitions.
+// TypeScript-first definition authoring for AtomBase.
 //
 // Example:
 // ```typescript
@@ -461,7 +461,7 @@ export function defineTable<const Columns extends Record<string, ColumnBuilder>>
 }
 
 /**
- * Define a schema template with multiple tables.
+ * Define a schema with multiple tables.
  *
  * ```typescript
  * export default defineSchema("user-app", {

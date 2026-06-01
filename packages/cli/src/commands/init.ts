@@ -36,7 +36,7 @@ export default defineGlobal({
 `;
 
 export const initCommand = new Command("init")
-  .description("Initialize Atomicbase in the current directory")
+  .description("Initialize an AtomBase project in the current directory")
   .action(async () => {
     const cwd = process.cwd();
 

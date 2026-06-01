@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -109,6 +110,7 @@ func TestBuildWhereFromJSON_Operators(t *testing.T) {
 
 		// IS NULL
 		{"is null", []map[string]any{{"email": map[string]any{"is": nil}}}, "IS NULL", 0, false},
+		{"is value parameterized", []map[string]any{{"email": map[string]any{"is": "NULL OR 1=1 --"}}}, "IS ?", 1, false},
 
 		// IN array
 		{"in", []map[string]any{{"status": map[string]any{"in": []any{"active", "pending"}}}}, "IN (?, ?)", 2, false},
@@ -122,6 +124,7 @@ func TestBuildWhereFromJSON_Operators(t *testing.T) {
 		{"not eq", []map[string]any{{"id": map[string]any{"not": map[string]any{"eq": 5}}}}, "!= ?", 1, false},
 		{"not in", []map[string]any{{"status": map[string]any{"not": map[string]any{"in": []any{"banned"}}}}}, "NOT IN", 1, false},
 		{"not is null", []map[string]any{{"email": map[string]any{"not": map[string]any{"is": nil}}}}, "IS NOT NULL", 0, false},
+		{"not is value parameterized", []map[string]any{{"email": map[string]any{"not": map[string]any{"is": "NULL OR 1=1 --"}}}}, "IS NOT ?", 1, false},
 		{"not like", []map[string]any{{"name": map[string]any{"not": map[string]any{"like": "%test%"}}}}, "NOT LIKE", 1, false},
 
 		// Invalid operator
@@ -154,10 +157,46 @@ func TestBuildWhereFromJSON_Operators(t *testing.T) {
 				t.Errorf("SQL = %q, want substring %q", sql, tt.wantSQL)
 			}
 
+			for _, literal := range collectParameterizedLiterals(tt.where) {
+				if strings.Contains(sql, literal) {
+					t.Errorf("SQL should parameterize value %q: %q", literal, sql)
+				}
+			}
+
 			if len(args) != tt.wantArgs {
 				t.Errorf("got %d args, want %d", len(args), tt.wantArgs)
 			}
 		})
+	}
+}
+
+func collectParameterizedLiterals(where []map[string]any) []string {
+	var literals []string
+	for _, condition := range where {
+		collectLiteralsFromValue(condition, &literals)
+	}
+	return literals
+}
+
+func collectLiteralsFromValue(value any, literals *[]string) {
+	switch v := value.(type) {
+	case map[string]any:
+		if _, isColumnRef := v["__col"]; isColumnRef {
+			return
+		}
+		for _, nested := range v {
+			collectLiteralsFromValue(nested, literals)
+		}
+	case []any:
+		for _, item := range v {
+			collectLiteralsFromValue(item, literals)
+		}
+	case nil:
+		return
+	case string:
+		*literals = append(*literals, v)
+	case bool, int, int8, int16, int32, int64, float32, float64:
+		*literals = append(*literals, fmt.Sprint(v))
 	}
 }
 
@@ -452,6 +491,57 @@ func TestUpsertJSON_RequiresAllPKColumns(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "role_id") {
 		t.Errorf("error should mention missing column: %v", err)
+	}
+}
+
+func TestUpsertJSON_RequiresNonNullPKColumns(t *testing.T) {
+	db := setupTestDB(t, schemaUserRoles)
+	defer db.Close()
+	schema := loadSchema(t, db)
+
+	dao := &TenantConnection{
+		Client: db,
+		Schema: schema,
+	}
+
+	req := UpsertRequest{
+		Data: []map[string]any{
+			{"user_id": 1, "role_id": nil, "granted_at": "2024-01-01"},
+		},
+	}
+
+	_, err := dao.UpsertJSON(context.Background(), "user_roles", req)
+	if err == nil {
+		t.Fatal("expected error for null PK column")
+	}
+	if !strings.Contains(err.Error(), "role_id") || !strings.Contains(err.Error(), "non-null") {
+		t.Errorf("error should mention non-null primary key column: %v", err)
+	}
+}
+
+func TestUpsertJSON_RejectsDuplicatePrimaryKeysInRequest(t *testing.T) {
+	db := setupTestDB(t, schemaUserRoles)
+	defer db.Close()
+	schema := loadSchema(t, db)
+
+	dao := &TenantConnection{
+		Client: db,
+		Schema: schema,
+	}
+
+	req := UpsertRequest{
+		Data: []map[string]any{
+			{"user_id": 1, "role_id": 2, "granted_at": "2024-01-01"},
+			{"user_id": 1, "role_id": 2, "granted_at": "2024-02-01"},
+		},
+	}
+
+	_, err := dao.UpsertJSON(context.Background(), "user_roles", req)
+	if err == nil {
+		t.Fatal("expected error for duplicate PK values")
+	}
+	if !strings.Contains(err.Error(), "duplicate primary key") {
+		t.Errorf("error should mention duplicate primary key: %v", err)
 	}
 }
 

@@ -1,5 +1,5 @@
 /**
- * Error class for Atomicbase API errors.
+ * Error class for AtomBase API errors.
  *
  * @example
  * ```ts

@@ -50,11 +50,11 @@ export interface AtomicbaseResponseWithCount<T> {
 // =============================================================================
 
 export interface AtomicbaseClientOptions {
-  /** Base URL of the Atomicbase API */
+  /** Base URL of the AtomBase API */
   url: string;
-  /** Service API key for platform/admin requests */
+  /** Service API key for project-scoped requests */
   apiKey?: string;
-  /** Session token for user-scoped auth and data requests */
+  /** Session token for auth-context and data requests */
   sessionToken?: string;
   /** Custom fetch implementation */
   fetch?: typeof fetch;

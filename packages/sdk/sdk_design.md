@@ -1,21 +1,27 @@
-# Atomicbase SDK Design
+# AtomBase SDK Design
 
 ## Current model
 
-The SDK mirrors the current Atomicbase API split:
+The SDK mirrors the current AtomBase noun model:
+
+```text
+Project -> Definition -> Database -> Session/Auth Context -> Query
+```
+
+Current SDK surfaces map to that model:
 
 - `client.definitions`
-  service-key platform definition management
+  project-scoped definition management
 - `client.databases`
-  service-key platform database management
+  project-scoped database management
 - `client.auth`
-  session-backed auth flows plus user self-provisioning
+  session/auth context flows plus user self-provisioning
 - `client.orgs`
-  convenience alias for `client.auth.orgs`
+  organization auth-context management, retained as a convenience alias for `client.auth.orgs`
 - `client.database(...)`
-  data API access
+  database-scoped query access
 
-## Auth modes
+## Session/Auth Context
 
 The SDK supports two caller modes:
 
@@ -64,7 +70,7 @@ Definitions are now definition-first, not template-first. The SDK types include:
 - `CreateDefinitionOptions`
 - `PushDefinitionOptions`
 
-## Auth client
+## Session/Auth Context client
 
 `client.auth` exposes:
 
@@ -134,5 +140,5 @@ Supported filter helpers:
 - The SDK should not invent semantics that differ from the API.
 - Session vs service auth should be explicit and composable.
 - The default data client should support the user-self path cleanly.
-- Organization management belongs under auth, not platform.
-- Definitions, not templates, are the canonical platform abstraction.
+- Organization management belongs under session/auth context, not the project platform surface.
+- Definitions, not templates, are the canonical project abstraction.

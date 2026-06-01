@@ -1,23 +1,31 @@
-# Atomicbase Definition Model
+# AtomBase Definition Model
+
+AtomBase's canonical model is:
+
+```text
+Project -> Definition -> Database -> Session/Auth Context -> Query
+```
+
+This document defines the `Definition` layer. See [core-model.md](./core-model.md) for the full noun model.
 
 ## Overview
 
-Atomicbase definitions describe:
+Definitions describe:
 
 - schema
 - access policies
 - provisioning rules
 - organization membership and management rules
 
-There are three definition types:
+There are three definition scopes:
 
 - `global`
 - `user`
 - `organization`
 
-All three share the same schema authoring model. The difference is how databases are provisioned and how auth context is applied at runtime.
+All three share the same schema authoring model. The difference is how databases are provisioned and how auth context is applied at runtime. Treat scope as a definition property, not as a separate top-level object model.
 
-## Definition types
+## Definition scopes
 
 ### Global
 
@@ -282,4 +290,4 @@ The intended browser-app flow for a user definition is:
 6. self-provision with `client.auth.createDatabase({ definition })` if the user has no database yet
 7. query with `client.database()` directly from the browser
 
-That is the main Atomicbase BaaS path. Security comes from session auth plus definition-driven access and provisioning policies, not from hiding the API behind a custom app backend.
+That is the main AtomBase BaaS path. Security comes from session auth plus definition-driven access and provisioning policies, not from hiding the API behind a custom app backend.

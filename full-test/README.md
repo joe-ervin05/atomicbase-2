@@ -1,8 +1,8 @@
 # full-test
 
-Deterministic simulation testing for the Atomicbase Data API.
+Deterministic simulation testing for the AtomBase Data API.
 
-This runner provisions a fresh, complex schema template using `@atomicbase/definitions`, pushes it via the Atomicbase CLI, creates a dedicated test database, and then runs a seeded stateful simulation against that database.
+This runner provisions a fresh, complex definition using `@atomicbase/definitions`, pushes it via the AtomBase CLI, creates a dedicated test database, and then runs a seeded stateful simulation against that database.
 
 ## Why this exists
 
@@ -19,10 +19,10 @@ Before simulation starts, `full-test` creates a temporary workspace and uses the
 
 Then it runs:
 
-- `atomicbase templates push <generated-template-name>`
-- `atomicbase databases create <generated-database-name> --template <generated-template-name>`
+- `atomicbase definitions push <generated-definition-name>`
+- `atomicbase databases create <generated-database-name> --definition <generated-definition-name>`
 
-The generated template is intentionally complex and includes:
+The generated definition is intentionally complex and includes:
 
 - Multiple related tables (`users`, `workspaces`, `projects`, `tags`, `project_tags`, `todos`, `comments`, `attachments`, `audit_events`)
 - Composite primary keys
@@ -76,4 +76,4 @@ Flags always override env vars.
 
 On mismatch or unexpected HTTP failure, the runner exits with a replay command including the exact seed.
 
-By default, created template/database resources are deleted after the run. Use `-keep-resources` to retain them for debugging.
+By default, created definition/database resources are deleted after the run. Use `-keep-resources` to retain them for debugging.

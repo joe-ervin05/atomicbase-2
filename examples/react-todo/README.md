@@ -1,13 +1,13 @@
 # React Todo Example
 
-This is the official Atomicbase todo example now.
+This is the official AtomBase todo example now.
 
 It demonstrates the intended product path:
 
 - browser-only client
-- built-in Atomicbase magic-link auth
+- built-in AtomBase magic-link auth
 - session token stored in the browser
-- direct SDK calls from the app to the Atomicbase API
+- direct SDK calls from the app to the AtomBase API
 - organization creation and selection through `/auth/orgs`
 - org-scoped data access through `client.database("org:<id>")`
 - definitions-first schema, membership, and access control
@@ -30,7 +30,7 @@ NEXT_PUBLIC_ATOMICBASE_URL=http://localhost:8080
 NEXT_PUBLIC_ATOMICBASE_ORG_DEFINITION=todo-team
 ```
 
-On the Atomicbase API side, make sure:
+On the AtomBase API side, make sure:
 
 ```env
 AUTH_MAGIC_LINK_CALLBACK_URL=http://localhost:3000/auth/callback

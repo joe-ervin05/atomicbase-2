@@ -1,15 +1,23 @@
-# Atomicbase API
+# AtomBase API
 
-The Go backend for Atomicbase. It serves a definitions-first multi-database API on top of SQLite and Turso.
+The Go backend for AtomBase. It serves a definition-first multi-database API on top of SQLite and Turso.
 
 ## Overview
 
-Atomicbase exposes two HTTP surfaces:
+AtomBase exposes two HTTP surfaces:
 
 - `Data API` at `/data/*` for tenant-scoped CRUD and query execution
 - `Platform API` at `/platform/*` for definition storage, versioning, and database provisioning
 
 The primary database stores identity, definitions, database routing metadata, access policies, and migration history. Tenant databases store application data. For organization databases, tenant-local membership is the source of truth for authorization.
+
+The canonical abstraction is:
+
+```text
+Project -> Definition -> Database -> Session/Auth Context -> Query
+```
+
+See [../docs/core-model.md](../docs/core-model.md). `global`, `user`, and `organization` are definition scopes used by routing and auth context resolution.
 
 ## Getting Started
 
@@ -148,7 +156,7 @@ The intended browser-app flow is:
 7. if `databaseId` is missing, call `POST /auth/me/database`
 8. call the data API directly from the browser with that session token
 
-`AUTH_MAGIC_LINK_CALLBACK_URL` is required for this flow. Atomicbase emails that exact app URL with the magic-link `token` attached as a query param. There is no fallback redirect because the callback route must perform the app-specific auth completion step.
+`AUTH_MAGIC_LINK_CALLBACK_URL` is required for this flow. AtomBase emails that exact app URL with the magic-link `token` attached as a query param. There is no fallback redirect because the callback route must perform the app-specific auth completion step.
 
 For the official browser example path, store the session token in `localStorage`, restore it on startup, and clear it on sign-out. Security comes from session auth plus definition-driven access and provisioning policies, not from proxying requests through a custom app backend.
 
@@ -228,6 +236,8 @@ curl -X POST http://localhost:8080/data/query/projects \
 ```
 
 ### Upsert
+
+Upsert data must include every primary key column. If a row conflicts with an existing primary key, both insert and update policies must authorize the request. Duplicate primary keys within the same upsert payload are rejected before execution.
 
 ```bash
 curl -X POST http://localhost:8080/data/query/projects \

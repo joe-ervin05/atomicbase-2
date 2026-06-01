@@ -1,6 +1,6 @@
-# Contributing to Atomicbase
+# Contributing to AtomBase
 
-Thanks for your interest in contributing to Atomicbase! This document outlines the process for contributing to this project.
+Thanks for your interest in contributing to AtomBase! This document outlines the process for contributing to this project.
 
 ## Getting Started
 
@@ -60,7 +60,7 @@ or
 CGO_ENABLED=1 go test -tags fts5 -v ./...
 ```
 
-### SDK/Schema/CLI (TypeScript)
+### SDK/Definitions/CLI (TypeScript)
 
 ```bash
 cd packages/sdk  # or schema, cli

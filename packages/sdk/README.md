@@ -1,6 +1,12 @@
 # @atomicbase/sdk
 
-TypeScript SDK for the Atomicbase API.
+TypeScript SDK for the AtomBase API.
+
+The SDK follows the AtomBase noun model:
+
+```text
+Project -> Definition -> Database -> Session/Auth Context -> Query
+```
 
 ## Install
 
@@ -37,6 +43,8 @@ Or derive a session-scoped client from a service-scoped base client:
 ```ts
 const sessionClient = client.withSession(sessionToken);
 ```
+
+New code can import `AtomBaseClient`, `AtomBaseError`, and related `AtomBase*` type aliases. Historical `Atomicbase*` exports remain available for compatibility.
 
 For the official browser-app path, persist the session token client-side, restore it on app boot, and clear it on sign-out. The example flow uses `localStorage` for that lifecycle because it is simple and explicit:
 
@@ -81,7 +89,7 @@ Organization database:
 const orgDb = client.database("org:org_123");
 ```
 
-## Platform clients
+## Project clients
 
 Definitions:
 
@@ -118,7 +126,7 @@ const { data: database } = await client.databases.create({
 });
 ```
 
-## Auth client
+## Session/Auth Context client
 
 Magic link:
 
@@ -151,11 +159,11 @@ await client.auth.createDatabase({
 ```
 
 Full session-based app flow:
-- [packages/sdk/examples/session-org-flow.ts](/Users/joeervin/Desktop/atomicbase/packages/sdk/examples/session-org-flow.ts)
+- [examples/session-org-flow.ts](./examples/session-org-flow.ts)
 
-## Organizations
+## Organization auth context
 
-Create and manage orgs through auth:
+Create and manage organizations through auth context:
 
 ```ts
 const { data: org } = await client.orgs.create({
@@ -194,7 +202,7 @@ await client.orgs.transferOwnership("acme", {
 ```
 
 Invite and acceptance flow:
-- [packages/sdk/examples/org-invite-flow.ts](/Users/joeervin/Desktop/atomicbase/packages/sdk/examples/org-invite-flow.ts)
+- [examples/org-invite-flow.ts](./examples/org-invite-flow.ts)
 
 ## End-to-end patterns
 

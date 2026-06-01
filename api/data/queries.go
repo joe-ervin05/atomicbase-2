@@ -293,21 +293,15 @@ func (dao *TenantConnection) upsertJSON(ctx context.Context, exec Executor, rela
 		}
 		columns = append(columns, col)
 	}
-	for _, pkCol := range table.Pk {
-		found := false
-		for _, col := range columns {
-			if col == pkCol {
-				found = true
-				break
-			}
-		}
-		if !found {
-			return nil, fmt.Errorf("upsert requires primary key column %q", pkCol)
-		}
+	if err := validateUpsertPrimaryKeys(table.Pk, req.Data); err != nil {
+		return nil, err
 	}
 
 	query, args := buildInsertSelectSQL("INSERT", relation, columns, req.Data, policy)
 	if err := dao.validateInsertRows(ctx, exec, columns, req.Data, policy); err != nil {
+		return nil, err
+	}
+	if err := dao.validateUpsertRows(ctx, exec, relation, table, req.Data); err != nil {
 		return nil, err
 	}
 
@@ -368,6 +362,104 @@ func (dao *TenantConnection) validateInsertRows(ctx context.Context, exec Execut
 		return tools.UnauthorizedErr("request does not satisfy definition policy")
 	}
 	return nil
+}
+
+func (dao *TenantConnection) validateUpsertRows(ctx context.Context, exec Executor, relation string, table CacheTable, rows []map[string]any) error {
+	if len(table.Pk) == 0 {
+		return nil
+	}
+
+	for _, row := range rows {
+		existsWhere, existsArgs, err := buildPrimaryKeyWhere(table.Pk, row)
+		if err != nil {
+			return err
+		}
+
+		existsQuery := fmt.Sprintf("SELECT COUNT(*) FROM [%s] %s", relation, existsWhere)
+		var existing int
+		if err := exec.QueryRowContext(ctx, existsQuery, existsArgs...).Scan(&existing); err != nil {
+			return err
+		}
+		if existing == 0 {
+			continue
+		}
+
+		rowPolicy, err := dao.compilePolicy(ctx, relation, "update", row)
+		if err != nil {
+			return err
+		}
+
+		authorizedWhere, authorizedArgs := appendPolicyWhere(existsWhere, append([]any(nil), existsArgs...), rowPolicy)
+		authorizedQuery := fmt.Sprintf("SELECT COUNT(*) FROM [%s] %s", relation, authorizedWhere)
+		authorizedQuery, authorizedArgs = applyPolicyCTE(authorizedQuery, authorizedArgs, dao, rowPolicy.NeedsMembershipCTE)
+
+		var allowed int
+		if err := exec.QueryRowContext(ctx, authorizedQuery, authorizedArgs...).Scan(&allowed); err != nil {
+			return err
+		}
+		if allowed == 0 {
+			return tools.UnauthorizedErr("request does not satisfy definition policy")
+		}
+	}
+
+	return nil
+}
+
+func buildPrimaryKeyWhere(pkCols []string, row map[string]any) (string, []any, error) {
+	parts := make([]string, 0, len(pkCols))
+	args := make([]any, 0, len(pkCols))
+	for _, pkCol := range pkCols {
+		value, ok := row[pkCol]
+		if !ok {
+			return "", nil, fmt.Errorf("upsert requires primary key column %q", pkCol)
+		}
+		if value == nil {
+			return "", nil, fmt.Errorf("upsert requires primary key column %q to be non-null", pkCol)
+		}
+		parts = append(parts, fmt.Sprintf("[%s] = ?", pkCol))
+		args = append(args, value)
+	}
+	return "WHERE " + strings.Join(parts, " AND ") + " ", args, nil
+}
+
+func validateUpsertPrimaryKeys(pkCols []string, rows []map[string]any) error {
+	if len(pkCols) == 0 {
+		return nil
+	}
+
+	seen := make(map[string]int, len(rows))
+	for i, row := range rows {
+		keyValues := make([]any, len(pkCols))
+		for j, pkCol := range pkCols {
+			value, ok := row[pkCol]
+			if !ok {
+				return fmt.Errorf("upsert requires primary key column %q", pkCol)
+			}
+			if value == nil {
+				return fmt.Errorf("upsert requires primary key column %q to be non-null", pkCol)
+			}
+			keyValues[j] = value
+		}
+
+		key, err := primaryKeyValuesKey(keyValues)
+		if err != nil {
+			return err
+		}
+		if first, ok := seen[key]; ok {
+			return fmt.Errorf("upsert data contains duplicate primary key at rows %d and %d", first, i)
+		}
+		seen[key] = i
+	}
+
+	return nil
+}
+
+func primaryKeyValuesKey(values []any) (string, error) {
+	encoded, err := json.Marshal(values)
+	if err != nil {
+		return "", fmt.Errorf("failed to encode primary key values: %w", err)
+	}
+	return string(encoded), nil
 }
 
 // UpdateJSON modifies rows using JSON body format.

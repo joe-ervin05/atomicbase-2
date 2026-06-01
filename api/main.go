@@ -152,6 +152,9 @@ func logStartupInfo() {
 }
 
 func main() {
+	if err := config.Validate(config.Cfg); err != nil {
+		log.Fatalf("Invalid configuration: %v", err)
+	}
 
 	logStartupInfo()
 

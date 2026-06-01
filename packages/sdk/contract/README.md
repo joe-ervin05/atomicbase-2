@@ -13,7 +13,7 @@ These tests validate real API/SDK behavior together (not mocks).
 
 ## Requirements
 
-1. Atomicbase API is running.
+1. AtomBase API is running.
 2. API is configured for database creation (Turso environment on the API side).
 3. If platform auth is enabled, set `ATOMICBASE_API_KEY`.
 

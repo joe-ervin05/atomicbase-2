@@ -12,9 +12,11 @@ AtomBase is the SaaS-native backend for a database-per-tenant architecture, buil
 
 AtomBase helps you run one database per tenant while still feeling like you are working with a single backend.
 
-- **Databases Everywhere**: spin up a database per tenant in seconds.
-- **Definitions**: define schemas and access patterns in code.
-- **Data APIs**: query tenant databases securely over HTTP.
+- **Projects**: run one backend with one primary metadata database.
+- **Definitions**: version database schemas, access policies, and provisioning rules in code.
+- **Databases**: create isolated SQLite/Turso databases from definitions.
+- **Session/Auth Context**: resolve service, anonymous, user, and organization access.
+- **Queries**: run policy-aware data operations over HTTP or the SDK.
 - **Managed Migrations**: keep tenant schemas in sync through definition versions.
 - **Authentication**: built-in magic-link auth and session-backed browser access.
 - **Storage**: coming soon.
@@ -103,7 +105,7 @@ export default defineGlobal({
 npx atomicbase definitions push
 ```
 
-### 6) Create a tenant database
+### 6) Create a database
 
 ```typescript
 import { createClient } from "@atomicbase/sdk";
@@ -116,7 +118,7 @@ const client = createClient({
 await client.databases.create({ id: "acme-corp", definition: "my-app" });
 ```
 
-### 7) Query tenant data
+### 7) Query data
 
 ```typescript
 import { eq } from "@atomicbase/sdk";
@@ -167,11 +169,21 @@ if (!me.data.databaseId) {
 const todoDb = client.database();
 ```
 
+## Core Model
+
+AtomBase uses one vocabulary everywhere:
+
+```text
+Project -> Definition -> Database -> Session/Auth Context -> Query
+```
+
+See [docs/core-model.md](./docs/core-model.md) for the canonical noun model. Historical `global`, `user`, and `organization` terms are definition scopes, not separate top-level abstractions.
+
 ## Key Ideas
 
-- **Tenant isolation by default**: each tenant gets its own database.
-- **Definitions keep systems aligned**: define once, roll forward with migrations.
-- **Strict versions + lazy sync**: out-of-date tenant databases are synchronized when accessed.
+- **Database isolation by default**: each concrete tenant or app boundary gets its own database.
+- **Definitions keep systems aligned**: define once, roll databases forward with migrations.
+- **Strict versions + lazy sync**: out-of-date databases are synchronized when accessed.
 - **Simple operational model**: single Go service with a focused API surface.
 
 ## Roadmap (incomplete)
@@ -183,7 +195,7 @@ const todoDb = client.database();
 
 ## Examples
 
-- [react-todo](./examples/react-todo) - legacy Next.js todo example using Google OAuth and the old template-era model
+- [react-todo](./examples/react-todo) - Next.js todo example using magic-link auth, organization-scoped databases, and direct SDK data access
 
 ## Contributing
 
