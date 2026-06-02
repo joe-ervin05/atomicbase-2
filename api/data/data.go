@@ -1,16 +1,13 @@
 package data
 
 import (
-	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 
 	"github.com/atombasedev/atombase/config"
 	"github.com/atombasedev/atombase/definitions"
 	"github.com/atombasedev/atombase/primarystore"
-	"github.com/atombasedev/atombase/tools"
 	_ "github.com/mattn/go-sqlite3"
 	_ "github.com/tursodatabase/libsql-client-go/libsql"
 )
@@ -76,31 +73,4 @@ func (api *API) connTurso(principal definitions.Principal, target definitions.Da
 		Principal:       principal,
 		primaryStore:    api.store,
 	}, nil
-}
-
-// QueryMap executes a query and returns results as a slice of maps.
-func (dao *DatabaseConnection) QueryMap(ctx context.Context, query string, args ...any) ([]map[string]any, error) {
-	rows, err := dao.Client.QueryContext(ctx, query, args...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	// Build column type lookup from schema definition (for databases with typeless columns).
-	// Falls back to DatabaseTypeName() for primary database or unknown columns.
-	schemaTypes := dao.Schema.BuildColumnTypeMap()
-
-	return tools.ScanRowsTyped(rows, func(columnType *sql.ColumnType) string {
-		return schemaTypes[columnType.Name()]
-	})
-}
-
-// QueryJSON executes a query and returns results as JSON bytes.
-func (dao *DatabaseConnection) QueryJSON(ctx context.Context, query string, args ...any) ([]byte, error) {
-	m, err := dao.QueryMap(ctx, query, args...)
-	if err != nil {
-		return nil, err
-	}
-
-	return json.Marshal(m)
 }

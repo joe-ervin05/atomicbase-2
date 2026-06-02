@@ -38,53 +38,12 @@ func TestValidateIdentifier(t *testing.T) {
 	}
 }
 
-func TestValidateTableAndColumnName(t *testing.T) {
-	tests := []struct {
-		name string
-		fn   func(string) error
-	}{
-		{name: "table", fn: ValidateTableName},
-		{name: "column", fn: ValidateColumnName},
+func TestValidateTableName(t *testing.T) {
+	err := ValidateTableName("bad-name")
+	if err == nil {
+		t.Fatal("expected validation error")
 	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := tt.fn("bad-name")
-			if err == nil {
-				t.Fatal("expected validation error")
-			}
-			if !errors.Is(err, ErrInvalidCharacter) {
-				t.Fatalf("expected wrapped invalid character error, got %v", err)
-			}
-		})
-	}
-}
-
-func TestValidateDDLQuery(t *testing.T) {
-	tests := []struct {
-		name    string
-		query   string
-		wantErr error
-	}{
-		{name: "create table", query: "CREATE TABLE users (id INTEGER)", wantErr: nil},
-		{name: "alter table", query: "  alter table users add column name text", wantErr: nil},
-		{name: "drop table", query: "\nDROP TABLE users", wantErr: nil},
-		{name: "select rejected", query: "SELECT * FROM users", wantErr: ErrNotDDLQuery},
-		{name: "empty rejected", query: "   ", wantErr: ErrNotDDLQuery},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := ValidateDDLQuery(tt.query)
-			if tt.wantErr == nil {
-				if err != nil {
-					t.Fatalf("expected no error, got %v", err)
-				}
-				return
-			}
-			if !errors.Is(err, tt.wantErr) {
-				t.Fatalf("expected %v, got %v", tt.wantErr, err)
-			}
-		})
+	if !errors.Is(err, ErrInvalidCharacter) {
+		t.Fatalf("expected wrapped invalid character error, got %v", err)
 	}
 }

@@ -1,7 +1,6 @@
 package platform
 
 import (
-	"context"
 	"strings"
 	"testing"
 )
@@ -149,26 +148,5 @@ func TestGenerateMigrationPlan_RenameAndFTSOrder(t *testing.T) {
 	}
 	if !strings.Contains(strings.Join(plan.SQL, "\n"), "CREATE VIRTUAL TABLE IF NOT EXISTS [posts_fts]") {
 		t.Fatalf("missing fts sql: %#v", plan.SQL)
-	}
-}
-
-func TestCreateMigration_PersistsDefinitionID(t *testing.T) {
-	api, db := setupPlatformAPI(t)
-	defer db.Close()
-
-	migration, err := api.createMigration(context.Background(), 7, 1, 2, []string{"ALTER TABLE [posts] ADD COLUMN [title]"})
-	if err != nil {
-		t.Fatalf("createMigration failed: %v", err)
-	}
-	if migration.DefinitionID != 7 {
-		t.Fatalf("definition id = %d, want 7", migration.DefinitionID)
-	}
-
-	var count int
-	if err := db.QueryRow(`SELECT COUNT(*) FROM atombase_migrations WHERE definition_id = 7 AND from_version = 1 AND to_version = 2`).Scan(&count); err != nil {
-		t.Fatalf("failed to query migration row: %v", err)
-	}
-	if count != 1 {
-		t.Fatalf("expected migration row to be inserted, got %d", count)
 	}
 }

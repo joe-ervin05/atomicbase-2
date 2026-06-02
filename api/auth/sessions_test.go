@@ -134,49 +134,6 @@ func TestValidateSession(t *testing.T) {
 	}
 }
 
-func TestDeleteUserSessions(t *testing.T) {
-	db := setupAuthTestDB(t)
-	ctx := context.Background()
-	now := time.Now().UTC().Format(time.RFC3339)
-
-	_, err := db.Exec(`INSERT INTO atombase_users (id, email, created_at, updated_at) VALUES (?, ?, ?, ?)`, "user_1", "u1@example.com", now, now)
-	if err != nil {
-		t.Fatalf("seed user_1: %v", err)
-	}
-	_, err = db.Exec(`INSERT INTO atombase_users (id, email, created_at, updated_at) VALUES (?, ?, ?, ?)`, "user_2", "u2@example.com", now, now)
-	if err != nil {
-		t.Fatalf("seed user_2: %v", err)
-	}
-
-	for _, s := range []*Session{
-		{Id: "s1", UserID: "user_1", Secret: "sec1", CreatedAt: time.Now().UTC(), ExpiresAt: time.Now().UTC().Add(10 * time.Minute)},
-		{Id: "s2", UserID: "user_1", Secret: "sec2", CreatedAt: time.Now().UTC(), ExpiresAt: time.Now().UTC().Add(10 * time.Minute)},
-		{Id: "s3", UserID: "user_2", Secret: "sec3", CreatedAt: time.Now().UTC(), ExpiresAt: time.Now().UTC().Add(10 * time.Minute)},
-	} {
-		if err := SaveSession(s, db, ctx); err != nil {
-			t.Fatalf("seed session %s: %v", s.Id, err)
-		}
-	}
-
-	if err := DeleteUserSessions("user_1", db, ctx); err != nil {
-		t.Fatalf("delete user sessions: %v", err)
-	}
-
-	var user1Count, user2Count int
-	err = db.QueryRow(`SELECT COUNT(*) FROM atombase_sessions WHERE user_id = 'user_1'`).Scan(&user1Count)
-	if err != nil {
-		t.Fatalf("count user_1 sessions: %v", err)
-	}
-	err = db.QueryRow(`SELECT COUNT(*) FROM atombase_sessions WHERE user_id = 'user_2'`).Scan(&user2Count)
-	if err != nil {
-		t.Fatalf("count user_2 sessions: %v", err)
-	}
-
-	if user1Count != 0 || user2Count != 1 {
-		t.Fatalf("unexpected counts after delete user sessions: user1=%d user2=%d", user1Count, user2Count)
-	}
-}
-
 func TestCreateSessionAndTokenFormat(t *testing.T) {
 	s := CreateSession("user_1")
 	if s.UserID != "user_1" {

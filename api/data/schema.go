@@ -1,130 +1,10 @@
 package data
 
 import (
-	"database/sql"
 	"strings"
 
 	"github.com/atombasedev/atombase/tools"
 )
-
-func schemaFks(db *sql.DB) (map[string][]CacheFk, error) {
-	fks := make(map[string][]CacheFk)
-
-	rows, err := db.Query(`
-		SELECT m.name as "table", p."table" as "references", p."from", p."to"
-		FROM sqlite_master m
-		JOIN pragma_foreign_key_list(m.name) p ON m.name != p."table"
-		WHERE m.type = 'table';
-	`)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var from, to, references, table sql.NullString
-
-		err := rows.Scan(&table, &references, &from, &to)
-		if err != nil {
-			return nil, err
-		}
-
-		fk := CacheFk{table.String, references.String, from.String, to.String}
-		fks[table.String] = append(fks[table.String], fk)
-	}
-
-	return fks, rows.Err()
-}
-
-// schemaFTS discovers FTS5 virtual tables and returns the base table names (without _fts suffix).
-func schemaFTS(db *sql.DB) (map[string]bool, error) {
-	ftsTables := make(map[string]bool)
-
-	rows, err := db.Query(`
-		SELECT name FROM sqlite_master
-		WHERE type = 'table' AND sql LIKE '%fts5%';
-	`)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var name string
-		if err := rows.Scan(&name); err != nil {
-			return nil, err
-		}
-		// Remove _fts suffix to get base table name
-		if len(name) > len(FTSSuffix) && name[len(name)-len(FTSSuffix):] == FTSSuffix {
-			ftsTables[name[:len(name)-len(FTSSuffix)]] = true
-		}
-	}
-
-	return ftsTables, rows.Err()
-}
-
-func SchemaCols(db *sql.DB) (map[string]CacheTable, error) {
-	tbls := make(map[string]CacheTable)
-
-	// First, fetch foreign keys and build a lookup map
-	fks, err := schemaFks(db)
-	if err != nil {
-		return nil, err
-	}
-	// Map: "table.column" -> "refTable.refColumn"
-	fkMap := make(map[string]string)
-	for _, fkList := range fks {
-		for _, fk := range fkList {
-			key := fk.Table + "." + fk.From
-			fkMap[key] = fk.References + "." + fk.To
-		}
-	}
-
-	rows, err := db.Query(`
-		SELECT m.name, l.name as col, l.type as colType, l.pk
-		FROM sqlite_master m
-		JOIN pragma_table_info(m.name) l
-		WHERE m.type IN ('table', 'view');
-	`)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var col sql.NullString
-		var colType sql.NullString
-		var name sql.NullString
-		var pk sql.NullInt64 // SQLite pk is 0 for non-PK, 1+ for PK position in composite keys
-
-		err := rows.Scan(&name, &col, &colType, &pk)
-		if err != nil {
-			return nil, err
-		}
-
-		tbl, exists := tbls[name.String]
-		if !exists {
-			tbl = CacheTable{Name: name.String, Columns: make(map[string]string)}
-		}
-
-		tbl.Columns[col.String] = colType.String
-
-		// pk > 0 means this column is part of the primary key
-		// For composite keys, pk indicates position (1, 2, etc.)
-		if pk.Int64 > 0 {
-			// Ensure Pk slice is large enough
-			pos := int(pk.Int64)
-			for len(tbl.Pk) < pos {
-				tbl.Pk = append(tbl.Pk, "")
-			}
-			tbl.Pk[pos-1] = col.String
-		}
-
-		tbls[name.String] = tbl
-	}
-
-	return tbls, rows.Err()
-}
 
 // // parseDefaultValue converts SQLite's default value string to appropriate Go type
 // func parseDefaultValue(val string) any {
@@ -181,7 +61,6 @@ func (schema SchemaCache) HasFTSIndex(table string) bool {
 }
 
 // BuildColumnTypeMap builds a flat map of column name -> type from all tables.
-// Used by QueryMap to determine proper scan types for typeless columns in databases.
 // Types are normalized to uppercase (TEXT, INTEGER, REAL, BLOB) for consistent matching.
 // For columns with the same name in different tables, the type is taken from the first table found.
 func (schema SchemaCache) BuildColumnTypeMap() map[string]string {

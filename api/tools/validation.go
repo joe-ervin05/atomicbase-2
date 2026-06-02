@@ -2,7 +2,6 @@ package tools
 
 import (
 	"fmt"
-	"strings"
 	"unicode"
 )
 
@@ -45,14 +44,6 @@ func ValidateTableName(name string) error {
 	return nil
 }
 
-// ValidateColumnName validates a column name.
-func ValidateColumnName(name string) error {
-	if err := ValidateIdentifier(name); err != nil {
-		return fmt.Errorf("invalid column name %q: %w", name, err)
-	}
-	return nil
-}
-
 // ValidateResourceName validates platform resource names such as definition and database names.
 // Valid names are 1-64 chars and may contain only lowercase letters, numbers, and dashes.
 func ValidateResourceName(name string) (code, message, hint string) {
@@ -71,26 +62,4 @@ func ValidateResourceName(name string) (code, message, hint string) {
 		}
 	}
 	return "", "", ""
-}
-
-// ValidateDDLQuery validates that a SQL query is a DDL statement.
-// Only CREATE, ALTER, and DROP statements are allowed.
-// This prevents arbitrary SQL execution through the schema editing endpoint.
-func ValidateDDLQuery(query string) error {
-	// Trim whitespace and get the first word
-	trimmed := strings.TrimSpace(query)
-	if trimmed == "" {
-		return ErrNotDDLQuery
-	}
-
-	// Get the first keyword (case-insensitive)
-	firstWord := strings.ToUpper(strings.Fields(trimmed)[0])
-
-	// Only allow DDL statements
-	switch firstWord {
-	case "CREATE", "ALTER", "DROP":
-		return nil
-	default:
-		return fmt.Errorf("%w: got %s", ErrNotDDLQuery, firstWord)
-	}
 }

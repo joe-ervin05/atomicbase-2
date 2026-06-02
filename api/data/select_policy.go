@@ -49,12 +49,3 @@ func (dao *DatabaseConnection) compileCustomJoinPolicies(ctx context.Context, cj
 	}
 	return policies, nil
 }
-
-func selectPoliciesNeedMembershipCTE(policies selectPolicySet) bool {
-	for _, predicate := range policies {
-		if predicate.NeedsMembershipCTE {
-			return true
-		}
-	}
-	return false
-}

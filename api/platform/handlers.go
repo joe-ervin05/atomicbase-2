@@ -1,8 +1,6 @@
 package platform
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"net/http"
 
 	"github.com/atombasedev/atombase/definitions"
@@ -11,15 +9,6 @@ import (
 
 func encodeSchemaForStorage(schema Schema) ([]byte, error) {
 	return tools.EncodeSchema(schema)
-}
-
-func schemaChecksum(schema Schema) (string, []byte, error) {
-	schemaJSON, err := encodeSchemaForStorage(schema)
-	if err != nil {
-		return "", nil, err
-	}
-	hash := sha256.Sum256(schemaJSON)
-	return hex.EncodeToString(hash[:]), schemaJSON, nil
 }
 
 func (api *API) RegisterRoutes(mux *http.ServeMux) {

@@ -42,11 +42,6 @@ func InitCache(c Cache) {
 	}
 }
 
-// GetCache returns the global cache instance.
-func GetCache() Cache {
-	return cache
-}
-
 // SetDefinition stores the schema and version for a definition.
 // Uses direct struct storage for in-memory cache (no serialization).
 func SetDefinition(definitionID int32, version int, schema any) {
@@ -101,19 +96,6 @@ func GetDefinition(definitionID int32) (CachedDefinition, bool) {
 		return CachedDefinition{}, false
 	}
 	return cached, true
-}
-
-// InvalidateDefinition removes a definition from cache.
-func InvalidateDefinition(definitionID int32) {
-	if cache == nil {
-		return
-	}
-	key := fmt.Sprintf("definition:%d", definitionID)
-
-	if memCache != nil {
-		memCache.DeleteValue(key)
-	}
-	cache.Delete(context.Background(), key)
 }
 
 // SetDatabase stores database metadata in cache.

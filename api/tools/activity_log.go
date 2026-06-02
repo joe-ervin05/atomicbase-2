@@ -58,11 +58,6 @@ func initActivityLoggerInternal() error {
 	return nil
 }
 
-// Enabled reports whether the handler handles records at the given level.
-func (h *ActivityHandler) Enabled(_ context.Context, level slog.Level) bool {
-	return level >= slog.LevelInfo
-}
-
 // Handle processes a log record.
 func (h *ActivityHandler) Handle(_ context.Context, r slog.Record) error {
 	h.mu.RLock()
@@ -120,19 +115,6 @@ func (h *ActivityHandler) Handle(_ context.Context, r slog.Record) error {
 
 	return nil
 }
-
-// WithAttrs returns a new handler with the given attributes.
-func (h *ActivityHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
-	return h // Activity logs don't use persistent attributes
-}
-
-// WithGroup returns a new handler with the given group name.
-func (h *ActivityHandler) WithGroup(name string) slog.Handler {
-	return h // Activity logs don't use groups
-}
-
-// Flush is currently a no-op because activity logs are emitted immediately.
-func (h *ActivityHandler) Flush() {}
 
 // LogActivity logs a request activity entry.
 func LogActivity(api, method, path string, status int, durationMs int64, clientIP, database, requestID, errMsg string) {

@@ -63,21 +63,60 @@ func setupTestDB(t *testing.T, schema string) *sql.DB {
 	return db
 }
 
-func loadSchema(t *testing.T, db *sql.DB) SchemaCache {
+func loadSchema(t *testing.T, _ *sql.DB) SchemaCache {
 	t.Helper()
-	tables, err := SchemaCols(db)
-	if err != nil {
-		t.Fatalf("failed to load schema: %v", err)
+	return SchemaCache{
+		Tables: map[string]CacheTable{
+			"users": {
+				Name: "users",
+				Pk:   []string{"id"},
+				Columns: map[string]string{
+					"id":     "INTEGER",
+					"name":   "TEXT",
+					"email":  "TEXT",
+					"age":    "INTEGER",
+					"status": "TEXT",
+				},
+			},
+			"posts": {
+				Name: "posts",
+				Pk:   []string{"id"},
+				Columns: map[string]string{
+					"id":         "INTEGER",
+					"user_id":    "INTEGER",
+					"author_id":  "TEXT",
+					"title":      "TEXT",
+					"created_at": "TEXT",
+					"updated_at": "TEXT",
+				},
+			},
+			"user_roles": {
+				Name: "user_roles",
+				Pk:   []string{"user_id", "role_id"},
+				Columns: map[string]string{
+					"user_id":    "INTEGER",
+					"role_id":    "INTEGER",
+					"granted_at": "TEXT",
+				},
+			},
+			"audit_log": {
+				Name: "audit_log",
+				Pk:   []string{"account_id", "entity_type", "entity_id"},
+				Columns: map[string]string{
+					"account_id":  "INTEGER",
+					"entity_type": "TEXT",
+					"entity_id":   "INTEGER",
+					"action":      "TEXT",
+				},
+			},
+		},
+		Fks: map[string][]CacheFk{
+			"posts": {
+				{Table: "posts", References: "users", From: "user_id", To: "id"},
+			},
+		},
+		FTSTables: map[string]bool{},
 	}
-	fks, err := schemaFks(db)
-	if err != nil {
-		t.Fatalf("failed to load fks: %v", err)
-	}
-	ftsTables, err := schemaFTS(db)
-	if err != nil {
-		t.Fatalf("failed to load fts: %v", err)
-	}
-	return SchemaCache{Tables: tables, Fks: fks, FTSTables: ftsTables}
 }
 
 // =============================================================================
@@ -255,52 +294,6 @@ func TestBuildWhereFromJSON_ColumnReference(t *testing.T) {
 	}
 	if len(args) != 0 {
 		t.Errorf("column reference should have 0 args, got %d", len(args))
-	}
-}
-
-// =============================================================================
-// SchemaCols Tests - Composite Primary Key Detection
-// Criteria B: composite keys explicitly mentioned as edge case
-// =============================================================================
-
-func TestSchemaCols_CompositePrimaryKey(t *testing.T) {
-	db := setupTestDB(t, schemaUserRoles)
-	defer db.Close()
-
-	tables, err := SchemaCols(db)
-	if err != nil {
-		t.Fatalf("SchemaCols error: %v", err)
-	}
-
-	tbl, ok := tables["user_roles"]
-	if !ok {
-		t.Fatal("user_roles table not found")
-	}
-
-	// Must have exactly 2 PK columns in correct order
-	if len(tbl.Pk) != 2 {
-		t.Fatalf("expected 2 PK columns, got %d: %v", len(tbl.Pk), tbl.Pk)
-	}
-	if tbl.Pk[0] != "user_id" || tbl.Pk[1] != "role_id" {
-		t.Errorf("PK order wrong: got %v, want [user_id, role_id]", tbl.Pk)
-	}
-}
-
-func TestSchemaCols_TripleCompositePrimaryKey(t *testing.T) {
-	db := setupTestDB(t, schemaAuditLog)
-	defer db.Close()
-
-	tables, err := SchemaCols(db)
-	if err != nil {
-		t.Fatalf("SchemaCols error: %v", err)
-	}
-
-	tbl := tables["audit_log"]
-	if len(tbl.Pk) != 3 {
-		t.Fatalf("expected 3 PK columns, got %d: %v", len(tbl.Pk), tbl.Pk)
-	}
-	if tbl.Pk[0] != "account_id" || tbl.Pk[1] != "entity_type" || tbl.Pk[2] != "entity_id" {
-		t.Errorf("PK order wrong: got %v", tbl.Pk)
 	}
 }
 

@@ -110,11 +110,6 @@ var (
 	ErrInvalidMigration         = errors.New("invalid migration")
 )
 
-// InvalidTypeErr returns an error indicating an invalid column type was specified.
-func InvalidTypeErr(column, typeName string) error {
-	return fmt.Errorf("%w: type %s for column %s", ErrInvalidColumnType, typeName, column)
-}
-
 // TableNotFoundErr returns an error indicating a table was not found.
 func TableNotFoundErr(table string) error {
 	return fmt.Errorf("%w: %s", ErrTableNotFound, table)
@@ -146,9 +141,4 @@ func UnauthorizedErr(msg string) error {
 // InvalidMigrationErr returns an error for migration validation failures.
 func InvalidMigrationErr(msg string) error {
 	return fmt.Errorf("%w: %s", ErrInvalidMigration, msg)
-}
-
-// VersionNotFoundErr returns an error for a missing definition version.
-func VersionNotFoundErr(version int) error {
-	return fmt.Errorf("%w: version %d", ErrVersionNotFound, version)
 }

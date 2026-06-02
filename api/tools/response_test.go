@@ -88,10 +88,10 @@ func TestBuildAPIError(t *testing.T) {
 		},
 		{
 			name:       "invalid column type sentinel",
-			err:        InvalidTypeErr("name", "JSON"),
+			err:        ErrInvalidColumnType,
 			wantStatus: http.StatusBadRequest,
 			wantCode:   CodeInvalidColumnType,
-			wantMsg:    "invalid column type: type JSON for column name",
+			wantMsg:    ErrInvalidColumnType.Error(),
 		},
 		{
 			name:       "missing where sentinel",
@@ -235,10 +235,10 @@ func TestBuildAPIError(t *testing.T) {
 		},
 		{
 			name:       "platform version not found",
-			err:        VersionNotFoundErr(7),
+			err:        ErrVersionNotFound,
 			wantStatus: http.StatusNotFound,
 			wantCode:   CodeVersionNotFound,
-			wantMsg:    "version not found: version 7",
+			wantMsg:    ErrVersionNotFound.Error(),
 		},
 		{
 			name:       "platform invalid migration",

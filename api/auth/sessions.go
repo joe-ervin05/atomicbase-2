@@ -105,8 +105,3 @@ func DeleteSession(sessionID string, db *sql.DB, ctx context.Context) error {
 	_, err := db.ExecContext(ctx, "DELETE FROM atombase_sessions WHERE id = ?", sessionID)
 	return err
 }
-
-func DeleteUserSessions(userID string, db *sql.DB, ctx context.Context) error {
-	_, err := db.ExecContext(ctx, "DELETE FROM atombase_sessions WHERE user_id = ?", userID)
-	return err
-}

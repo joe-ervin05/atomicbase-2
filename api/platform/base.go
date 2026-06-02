@@ -1,13 +1,10 @@
 package platform
 
 import (
-	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 
 	"github.com/atombasedev/atombase/primarystore"
-	"github.com/atombasedev/atombase/tools"
 )
 
 // API is the Platform API module with injected dependencies.
@@ -39,25 +36,4 @@ func (api *API) dbConn() (*sql.DB, error) {
 		return nil, errors.New("platform database not initialized")
 	}
 	return api.store.DB(), nil
-}
-
-// queryJSON executes a query and returns results as JSON bytes.
-func (api *API) queryJSON(ctx context.Context, query string, args ...any) ([]byte, error) {
-	conn, err := api.dbConn()
-	if err != nil {
-		return nil, err
-	}
-
-	rows, err := conn.QueryContext(ctx, query, args...)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	results, err := tools.ScanRows(rows)
-	if err != nil {
-		return nil, err
-	}
-
-	return json.Marshal(results)
 }

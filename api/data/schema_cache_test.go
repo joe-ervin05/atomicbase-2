@@ -171,8 +171,6 @@ func TestSchemaCache_StoreAndRetrieve(t *testing.T) {
 		t.Error("missing 'users' table in retrieved cache")
 	}
 
-	// Clean up
-	tools.InvalidateDefinition(999)
 }
 
 // TestSchemaCache_Miss verifies cache miss behavior.
@@ -180,27 +178,6 @@ func TestSchemaCache_Miss(t *testing.T) {
 	_, ok := tools.GetDefinition(99999)
 	if ok {
 		t.Error("expected cache miss for non-existent definition")
-	}
-}
-
-// TestSchemaCache_Invalidate verifies cache invalidation.
-func TestSchemaCache_Invalidate(t *testing.T) {
-	schema := TablesToSchemaCache([]Table{testTableUsers})
-	tools.SetDefinition(998, 1, schema)
-
-	// Verify it's there
-	_, ok := tools.GetDefinition(998)
-	if !ok {
-		t.Fatal("expected to find cached definition before invalidation")
-	}
-
-	// Invalidate
-	tools.InvalidateDefinition(998)
-
-	// Verify it's gone
-	_, ok = tools.GetDefinition(998)
-	if ok {
-		t.Error("expected cache miss after invalidation")
 	}
 }
 
@@ -232,6 +209,4 @@ func TestSchemaCache_VersionUpdate(t *testing.T) {
 		t.Errorf("expected version 3 after update, got %d", cached.Version)
 	}
 
-	// Clean up
-	tools.InvalidateDefinition(997)
 }

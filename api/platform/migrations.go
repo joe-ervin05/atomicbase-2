@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"time"
 )
 
 // GenerateMigrationPlan creates a migration plan from schema diff and merges.
@@ -551,73 +550,6 @@ func getDefaultForType(colType string) string {
 
 type Execer interface {
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
-}
-
-func (api *API) createMigration(ctx context.Context, definitionID int32, fromVersion, toVersion int, sqlStatements []string) (*Migration, error) {
-	conn, err := api.dbConn()
-	if err != nil {
-		return nil, err
-	}
-	return createMigrationTx(ctx, conn, definitionID, fromVersion, toVersion, sqlStatements)
-}
-
-func createMigrationTx(ctx context.Context, exec Execer, definitionID int32, fromVersion, toVersion int, sqlStatements []string) (*Migration, error) {
-	now := time.Now().UTC()
-
-	sqlJSON, err := json.Marshal(sqlStatements)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal SQL: %w", err)
-	}
-
-	result, err := exec.ExecContext(ctx, fmt.Sprintf(`
-		INSERT INTO %s (definition_id, from_version, to_version, sql, created_at)
-		VALUES (?, ?, ?, ?, ?)
-	`, TableMigrations), definitionID, fromVersion, toVersion, string(sqlJSON), now.Format(time.RFC3339))
-	if err != nil {
-		return nil, err
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		return nil, err
-	}
-
-	return &Migration{
-		ID:           id,
-		DefinitionID: definitionID,
-		FromVersion:  fromVersion,
-		ToVersion:    toVersion,
-		SQL:          sqlStatements,
-		Status:       MigrationStatusPending,
-		CreatedAt:    now,
-	}, nil
-}
-
-func (api *API) getMigrationSQL(ctx context.Context, definitionID int32, fromVersion, toVersion int) ([]string, error) {
-	conn, err := api.dbConn()
-	if err != nil {
-		return nil, err
-	}
-
-	row := conn.QueryRowContext(ctx, fmt.Sprintf(`
-		SELECT sql FROM %s
-		WHERE definition_id = ? AND from_version = ? AND to_version = ?
-	`, TableMigrations), definitionID, fromVersion, toVersion)
-
-	var sqlJSON string
-	if err := row.Scan(&sqlJSON); err != nil {
-		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("migration not found: %d -> %d", fromVersion, toVersion)
-		}
-		return nil, err
-	}
-
-	var statements []string
-	if err := json.Unmarshal([]byte(sqlJSON), &statements); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal SQL: %w", err)
-	}
-
-	return statements, nil
 }
 
 func diffSchemas(old, new Schema) []SchemaDiff {
