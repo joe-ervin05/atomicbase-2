@@ -2,16 +2,16 @@ import { Command } from "commander";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-const CONFIG_TEMPLATE = `import { defineConfig } from "@atomicbase/cli";
+const CONFIG_TEMPLATE = `import { defineConfig } from "@atombase/cli";
 
 export default defineConfig({
-  url: process.env.ATOMICBASE_URL || "http://localhost:8080",
-  apiKey: process.env.ATOMICBASE_API_KEY,
+  url: process.env.ATOMBASE_URL || "http://localhost:8080",
+  apiKey: process.env.ATOMBASE_API_KEY,
   schemas: "./definitions",
 });
 `;
 
-const EXAMPLE_SCHEMA = `import { defineGlobal, defineSchema, defineAccess, defineTable, c, allow } from "@atomicbase/definitions";
+const EXAMPLE_SCHEMA = `import { defineGlobal, defineSchema, defineAccess, defineTable, c, allow } from "@atombase/definitions";
 
 const schema = defineSchema({
   users: defineTable({
@@ -36,19 +36,19 @@ export default defineGlobal({
 `;
 
 export const initCommand = new Command("init")
-  .description("Initialize an AtomBase project in the current directory")
+  .description("Initialize an Atombase project in the current directory")
   .action(async () => {
     const cwd = process.cwd();
 
     // Check if already initialized
-    if (existsSync(resolve(cwd, "atomicbase.config.ts"))) {
-      console.log("Already initialized (atomicbase.config.ts exists)");
+    if (existsSync(resolve(cwd, "atombase.config.ts"))) {
+      console.log("Already initialized (atombase.config.ts exists)");
       return;
     }
 
     // Create config file
-    writeFileSync(resolve(cwd, "atomicbase.config.ts"), CONFIG_TEMPLATE);
-    console.log("Created atomicbase.config.ts");
+    writeFileSync(resolve(cwd, "atombase.config.ts"), CONFIG_TEMPLATE);
+    console.log("Created atombase.config.ts");
 
     // Create definitions directory
     const definitionsDir = resolve(cwd, "definitions");
@@ -62,7 +62,7 @@ export const initCommand = new Command("init")
     }
 
     console.log("\nDone! Next steps:");
-    console.log("  1. Set ATOMICBASE_URL and ATOMICBASE_API_KEY environment variables");
+    console.log("  1. Set ATOMBASE_URL and ATOMBASE_API_KEY environment variables");
     console.log("  2. Edit definitions/my-app.global.ts to define your schema and access rules");
-    console.log("  3. Run: atomicbase definitions push");
+    console.log("  3. Run: atombase definitions push");
   });

@@ -39,11 +39,11 @@ CREATE TABLE user_roles (
 // Triple composite key - edge case
 const schemaAuditLog = `
 CREATE TABLE audit_log (
-	tenant_id INTEGER NOT NULL,
+	account_id INTEGER NOT NULL,
 	entity_type TEXT NOT NULL,
 	entity_id INTEGER NOT NULL,
 	action TEXT,
-	PRIMARY KEY (tenant_id, entity_type, entity_id)
+	PRIMARY KEY (account_id, entity_type, entity_id)
 );
 `
 
@@ -299,7 +299,7 @@ func TestSchemaCols_TripleCompositePrimaryKey(t *testing.T) {
 	if len(tbl.Pk) != 3 {
 		t.Fatalf("expected 3 PK columns, got %d: %v", len(tbl.Pk), tbl.Pk)
 	}
-	if tbl.Pk[0] != "tenant_id" || tbl.Pk[1] != "entity_type" || tbl.Pk[2] != "entity_id" {
+	if tbl.Pk[0] != "account_id" || tbl.Pk[1] != "entity_type" || tbl.Pk[2] != "entity_id" {
 		t.Errorf("PK order wrong: got %v", tbl.Pk)
 	}
 }
@@ -473,7 +473,7 @@ func TestUpsertJSON_RequiresAllPKColumns(t *testing.T) {
 	defer db.Close()
 	schema := loadSchema(t, db)
 
-	dao := &TenantConnection{
+	dao := &DatabaseConnection{
 		Client: db,
 		Schema: schema,
 	}
@@ -499,7 +499,7 @@ func TestUpsertJSON_RequiresNonNullPKColumns(t *testing.T) {
 	defer db.Close()
 	schema := loadSchema(t, db)
 
-	dao := &TenantConnection{
+	dao := &DatabaseConnection{
 		Client: db,
 		Schema: schema,
 	}
@@ -524,7 +524,7 @@ func TestUpsertJSON_RejectsDuplicatePrimaryKeysInRequest(t *testing.T) {
 	defer db.Close()
 	schema := loadSchema(t, db)
 
-	dao := &TenantConnection{
+	dao := &DatabaseConnection{
 		Client: db,
 		Schema: schema,
 	}
@@ -550,7 +550,7 @@ func TestUpsertJSON_AllPKColumnsPresent(t *testing.T) {
 	defer db.Close()
 	schema := loadSchema(t, db)
 
-	dao := &TenantConnection{
+	dao := &DatabaseConnection{
 		Client: db,
 		Schema: schema,
 	}
@@ -586,7 +586,7 @@ func TestInsertJSON_AllowsOmittingAutoPrimaryKey(t *testing.T) {
 	defer db.Close()
 	schema := loadSchema(t, db)
 
-	dao := &TenantConnection{
+	dao := &DatabaseConnection{
 		Client: db,
 		Schema: schema,
 	}
@@ -624,7 +624,7 @@ func TestInsertJSON_MissingAutoPrimaryKeyDoesNotReturnUpsertError(t *testing.T) 
 	defer db.Close()
 	schema := loadSchema(t, db)
 
-	dao := &TenantConnection{
+	dao := &DatabaseConnection{
 		Client: db,
 		Schema: schema,
 	}
@@ -651,7 +651,7 @@ func TestUpdateJSON_RequiresWhereClause(t *testing.T) {
 	defer db.Close()
 	schema := loadSchema(t, db)
 
-	dao := &TenantConnection{
+	dao := &DatabaseConnection{
 		Client: db,
 		Schema: schema,
 	}
@@ -672,7 +672,7 @@ func TestDeleteJSON_RequiresWhereClause(t *testing.T) {
 	defer db.Close()
 	schema := loadSchema(t, db)
 
-	dao := &TenantConnection{
+	dao := &DatabaseConnection{
 		Client: db,
 		Schema: schema,
 	}
@@ -697,7 +697,7 @@ func TestBatch_TransactionRollback(t *testing.T) {
 	defer db.Close()
 	schema := loadSchema(t, db)
 
-	dao := &TenantConnection{
+	dao := &DatabaseConnection{
 		Client: db,
 		Schema: schema,
 	}

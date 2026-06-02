@@ -1,19 +1,19 @@
 "use client";
 
-import { createClient, type AtomicbaseClient } from "@atomicbase/sdk";
+import { createClient, type AtombaseClient } from "@atombase/sdk";
 
-export const SESSION_STORAGE_KEY = "atomicbase.react-todo.session";
-export const ACTIVE_ORG_STORAGE_KEY = "atomicbase.react-todo.active-org";
-export const PENDING_INVITE_STORAGE_KEY = "atomicbase.react-todo.pending-invite";
-export const ORG_DEFINITION_NAME = process.env.NEXT_PUBLIC_ATOMICBASE_ORG_DEFINITION || "todo-team";
+export const SESSION_STORAGE_KEY = "atombase.react-todo.session";
+export const ACTIVE_ORG_STORAGE_KEY = "atombase.react-todo.active-org";
+export const PENDING_INVITE_STORAGE_KEY = "atombase.react-todo.pending-invite";
+export const ORG_DEFINITION_NAME = process.env.NEXT_PUBLIC_ATOMBASE_ORG_DEFINITION || "todo-team";
 
-export function getAtomicbaseURL(): string {
-  return process.env.NEXT_PUBLIC_ATOMICBASE_URL?.trim() || "http://localhost:8080";
+export function getAtombaseURL(): string {
+  return process.env.NEXT_PUBLIC_ATOMBASE_URL?.trim() || "http://localhost:8080";
 }
 
-export function createBaseClient(): AtomicbaseClient {
+export function createBaseClient(): AtombaseClient {
   return createClient({
-    url: getAtomicbaseURL(),
+    url: getAtombaseURL(),
   });
 }
 

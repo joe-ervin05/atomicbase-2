@@ -1,5 +1,5 @@
 /**
- * Error class for AtomBase API errors.
+ * Error class for Atombase API errors.
  *
  * @example
  * ```ts
@@ -13,7 +13,7 @@
  * }
  * ```
  */
-export class AtomicbaseError extends Error {
+export class AtombaseError extends Error {
   /** Error code identifying the type of error */
   code: string;
   /** HTTP status code (0 for network errors) */
@@ -31,7 +31,7 @@ export class AtomicbaseError extends Error {
     details?: string;
   }) {
     super(context.message);
-    this.name = "AtomicbaseError";
+    this.name = "AtombaseError";
     this.code = context.code;
     this.status = context.status;
     this.hint = context.hint;
@@ -41,8 +41,8 @@ export class AtomicbaseError extends Error {
   /**
    * Creates an error from an API response body.
    */
-  static fromResponse(body: Record<string, unknown>, status: number): AtomicbaseError {
-    return new AtomicbaseError({
+  static fromResponse(body: Record<string, unknown>, status: number): AtombaseError {
+    return new AtombaseError({
       message: (body.message as string) ?? `Request failed with status ${status}`,
       code: (body.code as string) ?? "UNKNOWN_ERROR",
       status,
@@ -54,10 +54,10 @@ export class AtomicbaseError extends Error {
   /**
    * Creates a network error.
    */
-  static networkError(cause: unknown): AtomicbaseError {
+  static networkError(cause: unknown): AtombaseError {
     const message = cause instanceof Error ? cause.message : "Network request failed";
     const details = cause instanceof Error ? cause.stack : undefined;
-    return new AtomicbaseError({
+    return new AtombaseError({
       message,
       code: "NETWORK_ERROR",
       status: 0,

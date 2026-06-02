@@ -1,24 +1,24 @@
 # React Todo Example
 
-This is the official AtomBase todo example now.
+This is the official Atombase todo example now.
 
 It demonstrates the intended product path:
 
 - browser-only client
-- built-in AtomBase magic-link auth
+- built-in Atombase magic-link auth
 - session token stored in the browser
-- direct SDK calls from the app to the AtomBase API
+- direct SDK calls from the app to the Atombase API
 - organization creation and selection through `/auth/orgs`
-- org-scoped data access through `client.database("org:<id>")`
+- database-scoped data access through `client.database("<database-id>")`
 - definitions-first schema, membership, and access control
 
 ## What it includes
 
-- an organization definition in [definitions/todo.org.ts](/Users/joeervin/Desktop/atomicbase/examples/react-todo/definitions/todo.org.ts)
+- an organization definition in [definitions/todo.org.ts](/Users/joeervin/Desktop/atombase/examples/react-todo/definitions/todo.org.ts)
 - a dedicated app callback route at `/auth/callback`
 - direct browser completion of `completeMagicLink(token)`
 - direct organization creation with the auth API
-- todo CRUD through `client.database("org:<id>")`
+- todo CRUD through `client.database("<database-id>")`
 - member and invite management through `client.orgs.*`
 
 ## Required environment
@@ -26,11 +26,11 @@ It demonstrates the intended product path:
 Create `.env.local` in this app with:
 
 ```env
-NEXT_PUBLIC_ATOMICBASE_URL=http://localhost:8080
-NEXT_PUBLIC_ATOMICBASE_ORG_DEFINITION=todo-team
+NEXT_PUBLIC_ATOMBASE_URL=http://localhost:8080
+NEXT_PUBLIC_ATOMBASE_ORG_DEFINITION=todo-team
 ```
 
-On the AtomBase API side, make sure:
+On the Atombase API side, make sure:
 
 ```env
 AUTH_MAGIC_LINK_CALLBACK_URL=http://localhost:3000/auth/callback
@@ -43,13 +43,13 @@ APP_URL=http://localhost:3000
 From this example directory:
 
 ```bash
-pnpm exec atomicbase definitions push todo-team
+pnpm exec atombase definitions push todo-team
 ```
 
 Or from the repo root:
 
 ```bash
-pnpm --filter @atomicbase/cli exec atomicbase definitions push todo-team --cwd examples/react-todo
+pnpm --filter @atombase/cli exec atombase definitions push todo-team --cwd examples/react-todo
 ```
 
 ## Run the app
@@ -78,4 +78,4 @@ This example intentionally uses the idiomatic org-database pattern:
 - membership defined in `defineMembership(...)`
 - all todo operations require `auth.status == "member"`
 
-The isolation boundary is the organization database plus tenant-local membership, not a per-row owner column.
+The isolation boundary is the organization database plus database-local membership, not a per-row owner column.

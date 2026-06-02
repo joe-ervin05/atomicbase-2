@@ -1,19 +1,19 @@
-import { AtomicbaseQueryBuilder } from "./AtomicbaseQueryBuilder.js";
-import { AtomicbaseBuilder } from "./AtomicbaseBuilder.js";
-import { AtomicbaseError } from "./AtomicbaseError.js";
+import { AtombaseQueryBuilder } from "./AtombaseQueryBuilder.js";
+import { AtombaseBuilder } from "./AtombaseBuilder.js";
+import { AtombaseError } from "./AtombaseError.js";
 import { AuthClient, OrganizationAuthClient } from "./AuthClient.js";
 import { DatabasesClient } from "./DatabasesClient.js";
 import { DefinitionsClient } from "./DefinitionsClient.js";
-import type { AtomicbaseClientOptions, AtomicbaseBatchResponse } from "./types.js";
+import type { AtombaseClientOptions, AtombaseBatchResponse } from "./types.js";
 
 /**
  * Database-scoped client for operations.
  * Created by calling `client.database()` for the caller's own user database,
- * or `client.database('global:db-id')` / `client.database('org:org-id')` for explicit routing.
+ * or `client.database('db-id')` for an explicit database.
  *
  * @example
  * ```ts
- * const databaseClient = client.database('global:acme-corp')
+ * const databaseClient = client.database('acme-corp')
  *
  * // Query with fluent filters
  * const { data, error } = await databaseClient
@@ -36,7 +36,7 @@ export class DatabaseClient {
   readonly databaseId?: string;
   private readonly fetchFn: typeof fetch;
 
-  constructor(options: AtomicbaseClientOptions & { databaseId?: string }) {
+  constructor(options: AtombaseClientOptions & { databaseId?: string }) {
     this.baseUrl = options.url.replace(/\/$/, "");
     this.apiKey = options.apiKey;
     this.sessionToken = options.sessionToken;
@@ -53,8 +53,8 @@ export class DatabaseClient {
    * const { data } = await databaseClient.from('users').select()
    * ```
    */
-  from<T = Record<string, unknown>>(table: string): AtomicbaseQueryBuilder<T> {
-    return new AtomicbaseQueryBuilder<T>({
+  from<T = Record<string, unknown>>(table: string): AtombaseQueryBuilder<T> {
+    return new AtombaseQueryBuilder<T>({
       table,
       baseUrl: this.baseUrl,
       apiKey: this.apiKey,
@@ -81,8 +81,8 @@ export class DatabaseClient {
    * ```
    */
   async batch<T extends unknown[] = unknown[]>(
-    queries: AtomicbaseBuilder<unknown>[]
-  ): Promise<AtomicbaseBatchResponse<T>> {
+    queries: AtombaseBuilder<unknown>[]
+  ): Promise<AtombaseBatchResponse<T>> {
     const operations = queries.map((q) => q.toBatchOperation());
 
     const headers: Record<string, string> = {
@@ -106,7 +106,7 @@ export class DatabaseClient {
 
       if (!response.ok) {
         const errorBody = await response.json().catch(() => ({}));
-        const error = AtomicbaseError.fromResponse(errorBody, response.status);
+        const error = AtombaseError.fromResponse(errorBody, response.status);
         return { data: null, error };
       }
 
@@ -150,21 +150,21 @@ export class DatabaseClient {
 
       return { data: { results: processedResults as T }, error: null };
     } catch (err) {
-      const error = AtomicbaseError.networkError(err);
+      const error = AtombaseError.networkError(err);
       return { data: null, error };
     }
   }
 }
 
 /**
- * AtomBase client for multi-database operations.
+ * Atombase client for multi-database operations.
  * Use `.database()` to get a database-scoped client for querying.
  * Use `.definitions` and `.databases` for project-scoped actions.
  * Use `.auth` and `.orgs` for session/auth-context actions.
  *
  * @example
  * ```ts
- * import { createClient } from '@atomicbase/sdk'
+ * import { createClient } from '@atombase/sdk'
  *
  * const client = createClient({
  *   url: 'http://localhost:8080',
@@ -178,7 +178,7 @@ export class DatabaseClient {
  * })
  *
  * // Get a database-scoped client for operations
- * const acme = client.database('global:acme-corp')
+ * const acme = client.database('acme-corp')
  *
  * // Query the database
  * const { data, error } = await acme
@@ -188,7 +188,7 @@ export class DatabaseClient {
  *   .limit(10)
  * ```
  */
-export class AtomicbaseClient {
+export class AtombaseClient {
   readonly baseUrl: string;
   readonly apiKey?: string;
   readonly sessionToken?: string;
@@ -225,7 +225,7 @@ export class AtomicbaseClient {
    */
   readonly orgs: OrganizationAuthClient;
 
-  constructor(options: AtomicbaseClientOptions) {
+  constructor(options: AtombaseClientOptions) {
     this.baseUrl = options.url.replace(/\/$/, "");
     this.apiKey = options.apiKey;
     this.sessionToken = options.sessionToken;
@@ -260,7 +260,7 @@ export class AtomicbaseClient {
    *
    * @example
    * ```ts
-   * const databaseClient = client.database('global:acme-corp')
+   * const databaseClient = client.database('acme-corp')
    * const { data } = await databaseClient.from('users').select()
    * ```
    */
@@ -275,8 +275,8 @@ export class AtomicbaseClient {
     });
   }
 
-  withSession(sessionToken: string): AtomicbaseClient {
-    return new AtomicbaseClient({
+  withSession(sessionToken: string): AtombaseClient {
+    return new AtombaseClient({
       url: this.baseUrl,
       apiKey: this.apiKey,
       sessionToken,
@@ -287,7 +287,7 @@ export class AtomicbaseClient {
 }
 
 /**
- * Create an AtomBase client.
+ * Create an Atombase client.
  *
  * @example
  * ```ts
@@ -297,9 +297,9 @@ export class AtomicbaseClient {
  * })
  *
  * // Get a database client and query
- * const { data } = await client.database('global:my-tenant').from('users').select()
+ * const { data } = await client.database('my-database').from('users').select()
  * ```
  */
-export function createClient(options: AtomicbaseClientOptions): AtomicbaseClient {
-  return new AtomicbaseClient(options);
+export function createClient(options: AtombaseClientOptions): AtombaseClient {
+  return new AtombaseClient(options);
 }

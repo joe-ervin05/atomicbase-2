@@ -8,7 +8,7 @@ import (
 
 type selectPolicySet map[string]definitions.CompiledPredicate
 
-func (dao *TenantConnection) compileSelectPolicies(ctx context.Context, rel Relation) (selectPolicySet, error) {
+func (dao *DatabaseConnection) compileSelectPolicies(ctx context.Context, rel Relation) (selectPolicySet, error) {
 	policies := make(selectPolicySet)
 	seen := make(map[string]bool)
 	var walk func(Relation) error
@@ -34,7 +34,7 @@ func (dao *TenantConnection) compileSelectPolicies(ctx context.Context, rel Rela
 	return policies, nil
 }
 
-func (dao *TenantConnection) compileCustomJoinPolicies(ctx context.Context, cjq *CustomJoinQuery) (selectPolicySet, error) {
+func (dao *DatabaseConnection) compileCustomJoinPolicies(ctx context.Context, cjq *CustomJoinQuery) (selectPolicySet, error) {
 	policies := make(selectPolicySet)
 	tables := map[string]bool{cjq.BaseTable: true}
 	for _, join := range cjq.Joins {

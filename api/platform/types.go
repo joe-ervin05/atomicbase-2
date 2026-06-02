@@ -136,7 +136,7 @@ type DatabaseRecord struct {
 	OrganizationName  string    `json:"organizationName,omitempty"`
 }
 
-// RetryMigrationResponse is retained for internal compatibility.
+// RetryMigrationResponse describes a migration retry result.
 // Migration endpoints are deprecated and not exposed.
 type RetryMigrationResponse struct {
 	RetriedCount int `json:"retriedCount"`

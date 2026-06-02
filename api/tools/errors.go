@@ -41,7 +41,7 @@ const (
 	CodeInvalidRequest           = "INVALID_REQUEST"
 	CodeDefinitionExists         = "DEFINITION_EXISTS"
 	CodeNoChanges                = "NO_CHANGES"
-	CodeAtomicbaseBusy           = "ATOMICBASE_BUSY"
+	CodeAtombaseBusy             = "ATOMBASE_BUSY"
 	CodeDatabaseExists           = "DATABASE_EXISTS"
 	CodeDatabaseNotFoundPlatform = "DATABASE_NOT_FOUND"
 	CodeDatabaseInSync           = "DATABASE_IN_SYNC"
@@ -101,7 +101,7 @@ var (
 	ErrInvalidJSON              = errors.New("invalid request body")
 	ErrDefinitionExists         = errors.New("definition already exists")
 	ErrNoChanges                = errors.New("no schema changes detected")
-	ErrAtomicbaseBusy           = errors.New("another migration is already in progress")
+	ErrAtombaseBusy             = errors.New("another migration is already in progress")
 	ErrDatabaseExists           = errors.New("database already exists")
 	ErrDatabaseNotFoundPlatform = errors.New("database not found")
 	ErrDatabaseInSync           = errors.New("database is already at current version")

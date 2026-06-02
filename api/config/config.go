@@ -1,4 +1,4 @@
-// Package config provides centralized configuration for the Atomicbase API.
+// Package config provides centralized configuration for the Atombase API.
 package config
 
 import (
@@ -81,14 +81,14 @@ func Validate(cfg Config) error {
 func Load() Config {
 
 	requestTimeout := 30
-	if val := os.Getenv("ATOMICBASE_REQUEST_TIMEOUT"); val != "" {
+	if val := os.Getenv("ATOMBASE_REQUEST_TIMEOUT"); val != "" {
 		if t, err := strconv.Atoi(val); err == nil && t > 0 {
 			requestTimeout = t
 		}
 	}
 
 	var corsOrigins []string
-	if val := os.Getenv("ATOMICBASE_CORS_ORIGINS"); val != "" {
+	if val := os.Getenv("ATOMBASE_CORS_ORIGINS"); val != "" {
 		corsOrigins = strings.Split(val, ",")
 		for i := range corsOrigins {
 			corsOrigins[i] = strings.TrimSpace(corsOrigins[i])
@@ -96,7 +96,7 @@ func Load() Config {
 	}
 
 	var trustedProxyCIDRs []string
-	if val := os.Getenv("ATOMICBASE_TRUSTED_PROXY_CIDRS"); val != "" {
+	if val := os.Getenv("ATOMBASE_TRUSTED_PROXY_CIDRS"); val != "" {
 		trustedProxyCIDRs = strings.Split(val, ",")
 		for i := range trustedProxyCIDRs {
 			trustedProxyCIDRs[i] = strings.TrimSpace(trustedProxyCIDRs[i])
@@ -104,21 +104,21 @@ func Load() Config {
 	}
 
 	maxQueryDepth := 5
-	if val := os.Getenv("ATOMICBASE_MAX_QUERY_DEPTH"); val != "" {
+	if val := os.Getenv("ATOMBASE_MAX_QUERY_DEPTH"); val != "" {
 		if d, err := strconv.Atoi(val); err == nil && d > 0 {
 			maxQueryDepth = d
 		}
 	}
 
 	maxQueryLimit := 1000
-	if val := os.Getenv("ATOMICBASE_MAX_QUERY_LIMIT"); val != "" {
+	if val := os.Getenv("ATOMBASE_MAX_QUERY_LIMIT"); val != "" {
 		if l, err := strconv.Atoi(val); err == nil && l >= 0 {
 			maxQueryLimit = l
 		}
 	}
 
 	defaultLimit := 100
-	if val := os.Getenv("ATOMICBASE_DEFAULT_LIMIT"); val != "" {
+	if val := os.Getenv("ATOMBASE_DEFAULT_LIMIT"); val != "" {
 		if l, err := strconv.Atoi(val); err == nil && l >= 0 {
 			defaultLimit = l
 		}
@@ -134,14 +134,14 @@ func Load() Config {
 		PrimaryDBPath:            getEnv("DB_PATH", "atomicdata/primary.db"),
 		DataDir:                  getEnv("DATA_DIR", "atomicdata"),
 		MaxRequestBody:           1 << 20, // 1MB
-		APIKey:                   os.Getenv("ATOMICBASE_API_KEY"),
+		APIKey:                   os.Getenv("ATOMBASE_API_KEY"),
 		CORSOrigins:              corsOrigins,
 		TrustedProxyCIDRs:        trustedProxyCIDRs,
 		RequestTimeout:           requestTimeout,
 		MaxQueryDepth:            maxQueryDepth,
 		MaxQueryLimit:            maxQueryLimit,
 		DefaultLimit:             defaultLimit,
-		MaxOrganizationsPerUser:  parseIntEnv("ATOMICBASE_MAX_ORGANIZATIONS_PER_USER", 3),
+		MaxOrganizationsPerUser:  parseIntEnv("ATOMBASE_MAX_ORGANIZATIONS_PER_USER", 3),
 
 		// Turso configuration
 		TursoOrganization:  os.Getenv("TURSO_ORGANIZATION"),
@@ -156,9 +156,9 @@ func Load() Config {
 		SMTPPassword: os.Getenv("SMTP_PASSWORD"),
 		SMTPFrom:     strings.TrimSpace(os.Getenv("SMTP_FROM")),
 
-		ActivityLogEnabled:   strings.ToLower(os.Getenv("ATOMICBASE_ACTIVITY_LOG_ENABLED")) == "true",
-		ActivityLogPath:      getEnv("ATOMICBASE_ACTIVITY_LOG_PATH", "atomicdata/logs.db"),
-		ActivityLogRetention: parseIntEnv("ATOMICBASE_ACTIVITY_LOG_RETENTION", 30),
+		ActivityLogEnabled:   strings.ToLower(os.Getenv("ATOMBASE_ACTIVITY_LOG_ENABLED")) == "true",
+		ActivityLogPath:      getEnv("ATOMBASE_ACTIVITY_LOG_PATH", "atomicdata/logs.db"),
+		ActivityLogRetention: parseIntEnv("ATOMBASE_ACTIVITY_LOG_RETENTION", 30),
 
 		// Cache configuration
 		CacheRedisURL:      os.Getenv("CACHE_REDIS_URL"),

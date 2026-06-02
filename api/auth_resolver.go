@@ -102,8 +102,8 @@ func (r authResolver) LookupDefinitionProvision(ctx context.Context, name string
 	}, nil
 }
 
-func (r authResolver) LookupOrganizationTenant(ctx context.Context, organizationID string) (string, string, error) {
-	return r.store.LookupOrganizationTenant(ctx, organizationID)
+func (r authResolver) LookupOrganizationDatabase(ctx context.Context, organizationID string) (string, string, error) {
+	return r.store.LookupOrganizationDatabase(ctx, organizationID)
 }
 
 func (r authResolver) LookupOrganizationAuthz(ctx context.Context, organizationID string) (string, string, auth.ManagementMap, error) {
@@ -135,7 +135,7 @@ func (r authResolver) LookupOrganizationAuthz(ctx context.Context, organizationI
 }
 
 func (r authResolver) DeleteOrganization(ctx context.Context, organizationID string) error {
-	databaseID, _, err := r.store.LookupOrganizationTenant(ctx, organizationID)
+	databaseID, _, err := r.store.LookupOrganizationDatabase(ctx, organizationID)
 	if err != nil {
 		return err
 	}

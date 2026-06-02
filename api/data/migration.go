@@ -18,7 +18,7 @@ var (
 	retryBackoff            = []time.Duration{100 * time.Millisecond, 500 * time.Millisecond, 2 * time.Second}
 )
 
-func MigrateIfNeeded(ctx context.Context, dao *TenantConnection) error {
+func MigrateIfNeeded(ctx context.Context, dao *DatabaseConnection) error {
 	if dao.DefinitionID == 0 {
 		return nil
 	}

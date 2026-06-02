@@ -1,10 +1,10 @@
 {
-  "name": "@atomicbase/cli",
+  "name": "@atombase/cli",
   "version": "0.1.0",
-  "description": "CLI for AtomBase project, definition, and database management",
+  "description": "CLI for Atombase project, definition, and database management",
   "type": "module",
   "bin": {
-    "atomicbase": "./bin/atomicbase.js"
+    "atombase": "./bin/atombase.js"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -23,7 +23,7 @@
     "dev": "tsc --watch"
   },
   "dependencies": {
-    "@atomicbase/definitions": "workspace:*",
+    "@atombase/definitions": "workspace:*",
     "commander": "^12.1.0",
     "dotenv": "^16.4.5",
     "jiti": "^2.4.2"
@@ -33,7 +33,7 @@
     "typescript": "^5.3.3"
   },
   "keywords": [
-    "atomicbase",
+    "atombase",
     "cli",
     "schema",
     "database"

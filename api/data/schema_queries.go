@@ -5,7 +5,7 @@ import (
 	"errors"
 )
 
-func (dao *TenantConnection) updateSchema() error {
+func (dao *DatabaseConnection) updateSchema() error {
 	cols, err := SchemaCols(dao.Client)
 	if err != nil {
 		return err
@@ -24,7 +24,7 @@ func (dao *TenantConnection) updateSchema() error {
 	return nil
 }
 
-func (dao *TenantConnection) InvalidateSchema(_ context.Context) error {
+func (dao *DatabaseConnection) InvalidateSchema(_ context.Context) error {
 	if dao.primaryStore == nil || dao.primaryStore.DB() == nil {
 		return errors.New("primary store not initialized")
 	}

@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { Check, ChevronDown, LoaderCircle, LogOut, Mail, Plus, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
-import { eq } from "@atomicbase/sdk";
-import type { AtomicbaseClient, Organization, OrganizationInvite, OrganizationMember, User } from "@atomicbase/sdk";
+import { eq } from "@atombase/sdk";
+import type { AtombaseClient, Organization, OrganizationInvite, OrganizationMember, User } from "@atombase/sdk";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -33,7 +33,7 @@ import {
   getStoredActiveOrg,
   getStoredSessionToken,
   setStoredActiveOrg,
-} from "@/lib/atomicbase";
+} from "@/lib/atombase";
 
 type Todo = {
   id: string;
@@ -64,11 +64,7 @@ export function TodoApp() {
   const [magicLinkSent, setMagicLinkSent] = useState(false);
   const [pending, startTransition] = useTransition();
 
-  useEffect(() => {
-    void bootstrap(baseClient);
-  }, [baseClient]);
-
-  async function bootstrap(client: AtomicbaseClient) {
+  async function bootstrap(client: AtombaseClient) {
     const stored = getStoredSessionToken();
     if (!stored) {
       setAuthState({ kind: "anonymous" });
@@ -88,7 +84,7 @@ export function TodoApp() {
     await hydrateOrganizations(sessionClient, me.data, stored);
   }
 
-  async function hydrateOrganizations(client: AtomicbaseClient, user: User, token: string) {
+  async function hydrateOrganizations(client: AtombaseClient, user: User, token: string) {
     const orgResult = await client.orgs.list();
     if (orgResult.error) {
       setAuthState({ kind: "error", message: orgResult.error.message });
@@ -104,8 +100,9 @@ export function TodoApp() {
       storedOrg && nextOrganizations.some((org) => org.id === storedOrg)
         ? storedOrg
         : fallbackOrg;
+    const nextActiveOrganization = nextOrganizations.find((org) => org.id === nextActiveOrg) ?? null;
 
-    if (!nextActiveOrg) {
+    if (!nextActiveOrg || !nextActiveOrganization) {
       setActiveOrgId(null);
       setMembers([]);
       setInvites([]);
@@ -117,14 +114,14 @@ export function TodoApp() {
     setActiveOrgId(nextActiveOrg);
     setStoredActiveOrg(nextActiveOrg);
     setAuthState({ kind: "authenticated", user, token });
-    await loadOrganizationWorkspace(client, nextActiveOrg);
+    await loadOrganizationWorkspace(client, nextActiveOrganization);
   }
 
-  async function loadOrganizationWorkspace(client: AtomicbaseClient, orgId: string) {
+  async function loadOrganizationWorkspace(client: AtombaseClient, organization: Organization) {
     const [todosResult, membersResult, invitesResult] = await Promise.all([
-      client.database(`org:${orgId}`).from<Todo>("todos").select("*").orderBy("created_at", "desc"),
-      client.orgs.listMembers(orgId),
-      client.orgs.listInvites(orgId),
+      client.database(organization.databaseId).from<Todo>("todos").select("*").orderBy("created_at", "desc"),
+      client.orgs.listMembers(organization.id),
+      client.orgs.listInvites(organization.id),
     ]);
 
     if (todosResult.error) {
@@ -144,6 +141,12 @@ export function TodoApp() {
     setMembers(membersResult.data ?? []);
     setInvites(invitesResult.data ?? []);
   }
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      void bootstrap(baseClient);
+    });
+  }, [baseClient]);
 
   async function handleMagicLinkStart(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -185,24 +188,26 @@ export function TodoApp() {
 
   async function handleOrganizationChange(orgId: string) {
     if (authState.kind !== "authenticated") return;
+    const organization = organizations.find((org) => org.id === orgId);
+    if (!organization) return;
     setActiveOrgId(orgId);
     setStoredActiveOrg(orgId);
     startTransition(async () => {
       const client = baseClient.withSession(authState.token);
-      await loadOrganizationWorkspace(client, orgId);
+      await loadOrganizationWorkspace(client, organization);
     });
   }
 
   async function handleAddTodo(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (authState.kind !== "authenticated" || !activeOrgId) return;
+    if (authState.kind !== "authenticated" || !activeOrgId || !activeOrganization) return;
 
     const title = newTodoTitle.trim();
     if (!title) return;
 
     startTransition(async () => {
       const client = baseClient.withSession(authState.token);
-      const result = await client.database(`org:${activeOrgId}`).from<Todo>("todos").insert({
+      const result = await client.database(activeOrganization.databaseId).from<Todo>("todos").insert({
         id: crypto.randomUUID(),
         title,
         completed: 0,
@@ -213,17 +218,17 @@ export function TodoApp() {
         return;
       }
       setNewTodoTitle("");
-      await loadOrganizationWorkspace(client, activeOrgId);
+      await loadOrganizationWorkspace(client, activeOrganization);
     });
   }
 
   async function handleToggle(todo: Todo) {
-    if (authState.kind !== "authenticated" || !activeOrgId) return;
+    if (authState.kind !== "authenticated" || !activeOrgId || !activeOrganization) return;
 
     startTransition(async () => {
       const client = baseClient.withSession(authState.token);
       const result = await client
-        .database(`org:${activeOrgId}`)
+        .database(activeOrganization.databaseId)
         .from<Todo>("todos")
         .update({
           completed: todo.completed ? 0 : 1,
@@ -234,21 +239,21 @@ export function TodoApp() {
         toast.error(result.error.message);
         return;
       }
-      await loadOrganizationWorkspace(client, activeOrgId);
+      await loadOrganizationWorkspace(client, activeOrganization);
     });
   }
 
   async function handleDelete(todoId: string) {
-    if (authState.kind !== "authenticated" || !activeOrgId) return;
+    if (authState.kind !== "authenticated" || !activeOrgId || !activeOrganization) return;
 
     startTransition(async () => {
       const client = baseClient.withSession(authState.token);
-      const result = await client.database(`org:${activeOrgId}`).from<Todo>("todos").delete().where(eq("id", todoId));
+      const result = await client.database(activeOrganization.databaseId).from<Todo>("todos").delete().where(eq("id", todoId));
       if (result.error) {
         toast.error(result.error.message);
         return;
       }
-      await loadOrganizationWorkspace(client, activeOrgId);
+      await loadOrganizationWorkspace(client, activeOrganization);
     });
   }
 
@@ -270,7 +275,9 @@ export function TodoApp() {
       }
       setInviteEmail("");
       toast.success(`Invite sent to ${invite.data.email}`);
-      await loadOrganizationWorkspace(client, activeOrgId);
+      if (activeOrganization) {
+        await loadOrganizationWorkspace(client, activeOrganization);
+      }
     });
   }
 
@@ -615,4 +622,3 @@ export function TodoApp() {
     </div>
   );
 }
-

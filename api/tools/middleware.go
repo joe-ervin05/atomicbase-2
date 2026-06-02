@@ -164,7 +164,7 @@ func detectAPIType(path string) string {
 }
 
 // CORSMiddleware handles Cross-Origin Resource Sharing.
-// If ATOMICBASE_CORS_ORIGINS is not set, CORS is disabled (no cross-origin access).
+// If ATOMBASE_CORS_ORIGINS is not set, CORS is disabled (no cross-origin access).
 // Set to "*" to allow all origins, or comma-separated list of specific origins.
 func CORSMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -204,7 +204,7 @@ func CORSMiddleware(next http.Handler) http.Handler {
 }
 
 // TimeoutMiddleware adds a request timeout to prevent long-running requests.
-// Default timeout is 30 seconds, configurable via ATOMICBASE_REQUEST_TIMEOUT.
+// Default timeout is 30 seconds, configurable via ATOMBASE_REQUEST_TIMEOUT.
 func TimeoutMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		timeout := time.Duration(config.Cfg.RequestTimeout) * time.Second

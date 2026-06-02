@@ -30,13 +30,13 @@ func (s testOrganizationStore) CreateOrganization(ctx context.Context, req Creat
 	if len(req.Metadata) > 0 {
 		metadata = string(req.Metadata)
 	}
-	tenantPath := filepath.Join(filepath.Dir(s.databaseID), req.ID+".db")
-	tenantDB, err := sql.Open("sqlite3", tenantPath)
+	databasePath := filepath.Join(filepath.Dir(s.databaseID), req.ID+".db")
+	databaseDB, err := sql.Open("sqlite3", databasePath)
 	if err != nil {
 		return nil, err
 	}
-	defer tenantDB.Close()
-	if _, err := tenantDB.Exec(`
+	defer databaseDB.Close()
+	if _, err := databaseDB.Exec(`
 		CREATE TABLE atombase_membership (
 			user_id TEXT PRIMARY KEY,
 			role TEXT NOT NULL,
@@ -46,7 +46,7 @@ func (s testOrganizationStore) CreateOrganization(ctx context.Context, req Creat
 	`); err != nil {
 		return nil, err
 	}
-	if _, err := tenantDB.Exec(`
+	if _, err := databaseDB.Exec(`
 		CREATE TABLE atombase_invites (
 			id TEXT PRIMARY KEY,
 			email TEXT NOT NULL,
@@ -59,25 +59,26 @@ func (s testOrganizationStore) CreateOrganization(ctx context.Context, req Creat
 	`); err != nil {
 		return nil, err
 	}
-	if _, err := tenantDB.Exec(`INSERT INTO atombase_membership (user_id, role, status, created_at) VALUES (?, 'owner', 'active', ?)`, req.OwnerID, now); err != nil {
+	if _, err := databaseDB.Exec(`INSERT INTO atombase_membership (user_id, role, status, created_at) VALUES (?, 'owner', 'active', ?)`, req.OwnerID, now); err != nil {
 		return nil, err
 	}
-	if _, err := s.db.ExecContext(ctx, `INSERT INTO atombase_databases (id, definition_id, definition_version) VALUES (?, 1, 1)`, tenantPath); err != nil {
+	if _, err := s.db.ExecContext(ctx, `INSERT INTO atombase_databases (id, definition_id, definition_version) VALUES (?, 1, 1)`, databasePath); err != nil {
 		return nil, err
 	}
 	if _, err := s.db.ExecContext(ctx, `
 		INSERT INTO atombase_organizations (id, database_id, name, owner_id, max_members, metadata, created_at, updated_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-	`, req.ID, tenantPath, req.Name, req.OwnerID, req.MaxMembers, metadata, now, now); err != nil {
+	`, req.ID, databasePath, req.Name, req.OwnerID, req.MaxMembers, metadata, now, now); err != nil {
 		return nil, err
 	}
 	org := &Organization{
-		ID:        req.ID,
-		Name:      req.Name,
-		OwnerID:   req.OwnerID,
-		Metadata:  []byte(metadata),
-		CreatedAt: now,
-		UpdatedAt: now,
+		ID:         req.ID,
+		DatabaseID: databasePath,
+		Name:       req.Name,
+		OwnerID:    req.OwnerID,
+		Metadata:   []byte(metadata),
+		CreatedAt:  now,
+		UpdatedAt:  now,
 	}
 	if req.MaxMembers != nil {
 		value := *req.MaxMembers
@@ -113,7 +114,7 @@ func (s testOrganizationStore) LookupDefinitionProvision(ctx context.Context, na
 	}, nil
 }
 
-func (s testOrganizationStore) LookupOrganizationTenant(ctx context.Context, organizationID string) (string, string, error) {
+func (s testOrganizationStore) LookupOrganizationDatabase(ctx context.Context, organizationID string) (string, string, error) {
 	var resolvedID string
 	err := s.db.QueryRowContext(ctx, `SELECT database_id FROM atombase_organizations WHERE id = ?`, organizationID).Scan(&resolvedID)
 	if err != nil {
@@ -123,7 +124,7 @@ func (s testOrganizationStore) LookupOrganizationTenant(ctx context.Context, org
 }
 
 func (s testOrganizationStore) LookupOrganizationAuthz(ctx context.Context, organizationID string) (string, string, ManagementMap, error) {
-	databaseID, authToken, err := s.LookupOrganizationTenant(ctx, organizationID)
+	databaseID, authToken, err := s.LookupOrganizationDatabase(ctx, organizationID)
 	if err != nil {
 		return "", "", nil, err
 	}
@@ -195,13 +196,13 @@ func setupOrganizationMembershipAPI(t *testing.T) (*API, *sql.DB, string) {
 		}
 	}
 
-	tenantPath := filepath.Join(t.TempDir(), "org-tenant.db")
-	tenantDB, err := sql.Open("sqlite3", tenantPath)
+	databasePath := filepath.Join(t.TempDir(), "org-database.db")
+	databaseDB, err := sql.Open("sqlite3", databasePath)
 	if err != nil {
-		t.Fatalf("open tenant db: %v", err)
+		t.Fatalf("open database db: %v", err)
 	}
-	t.Cleanup(func() { _ = tenantDB.Close() })
-	if _, err := tenantDB.Exec(`
+	t.Cleanup(func() { _ = databaseDB.Close() })
+	if _, err := databaseDB.Exec(`
 		CREATE TABLE atombase_membership (
 			user_id TEXT PRIMARY KEY,
 			role TEXT NOT NULL,
@@ -209,9 +210,9 @@ func setupOrganizationMembershipAPI(t *testing.T) (*API, *sql.DB, string) {
 			created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 		)
 	`); err != nil {
-		t.Fatalf("create tenant membership schema: %v", err)
+		t.Fatalf("create database membership schema: %v", err)
 	}
-	if _, err := tenantDB.Exec(`
+	if _, err := databaseDB.Exec(`
 		CREATE TABLE atombase_invites (
 			id TEXT PRIMARY KEY,
 			email TEXT NOT NULL,
@@ -222,7 +223,7 @@ func setupOrganizationMembershipAPI(t *testing.T) (*API, *sql.DB, string) {
 			UNIQUE(email)
 		)
 	`); err != nil {
-		t.Fatalf("create tenant invite schema: %v", err)
+		t.Fatalf("create database invite schema: %v", err)
 	}
 
 	now := time.Now().UTC().Format(time.RFC3339)
@@ -237,34 +238,34 @@ func setupOrganizationMembershipAPI(t *testing.T) (*API, *sql.DB, string) {
 	if _, err := db.Exec(`INSERT INTO atombase_definitions (id, name, definition_type, current_version) VALUES (1, 'workspace', 'organization', 1)`); err != nil {
 		t.Fatalf("seed definitions: %v", err)
 	}
-	if _, err := db.Exec(`INSERT INTO atombase_databases (id, definition_id, definition_version) VALUES (?, 1, 1)`, tenantPath); err != nil {
+	if _, err := db.Exec(`INSERT INTO atombase_databases (id, definition_id, definition_version) VALUES (?, 1, 1)`, databasePath); err != nil {
 		t.Fatalf("seed databases: %v", err)
 	}
 	if _, err := db.Exec(`INSERT INTO atombase_organizations (id, database_id, name, owner_id, created_at, updated_at) VALUES (?, ?, 'Acme', 'user-owner', ?, ?)`,
-		"org-1", tenantPath, now, now); err != nil {
+		"org-1", databasePath, now, now); err != nil {
 		t.Fatalf("seed organizations: %v", err)
 	}
-	if _, err := tenantDB.Exec(`
+	if _, err := databaseDB.Exec(`
 		INSERT INTO atombase_membership (user_id, role, status, created_at)
 		VALUES
 			('user-owner', 'owner', 'active', ?),
 			('user-admin', 'admin', 'active', ?),
 			('user-member', 'member', 'active', ?)
 	`, now, now, now); err != nil {
-		t.Fatalf("seed tenant membership: %v", err)
+		t.Fatalf("seed database membership: %v", err)
 	}
 
-	api := NewAPI(testOrganizationStore{db: db, databaseID: tenantPath})
+	api := NewAPI(testOrganizationStore{db: db, databaseID: databasePath})
 
-	oldOpen := openOrganizationTenantDB
-	openOrganizationTenantDB = func(databaseID, authToken string) (*sql.DB, error) {
+	oldOpen := openOrganizationDatabase
+	openOrganizationDatabase = func(databaseID, authToken string) (*sql.DB, error) {
 		return sql.Open("sqlite3", databaseID)
 	}
 	t.Cleanup(func() {
-		openOrganizationTenantDB = oldOpen
+		openOrganizationDatabase = oldOpen
 	})
 
-	return api, tenantDB, tenantPath
+	return api, databaseDB, databasePath
 }
 
 func TestListOrganizationMembers_RequiresActiveMembership(t *testing.T) {
@@ -285,7 +286,7 @@ func TestListOrganizationMembers_RequiresActiveMembership(t *testing.T) {
 }
 
 func TestCreateOrganizationMember_OnlyOwnerCanAssignOwnerRole(t *testing.T) {
-	api, tenantDB, _ := setupOrganizationMembershipAPI(t)
+	api, databaseDB, _ := setupOrganizationMembershipAPI(t)
 
 	if _, err := api.createOrganizationMember(context.Background(), &orgActor{Session: &Session{Id: "sess-admin", UserID: "user-admin"}, UserID: "user-admin"}, "org-1", createOrganizationMemberRequest{
 		UserID: "user-new-owner",
@@ -306,7 +307,7 @@ func TestCreateOrganizationMember_OnlyOwnerCanAssignOwnerRole(t *testing.T) {
 	}
 
 	var count int
-	if err := tenantDB.QueryRow(`SELECT COUNT(*) FROM atombase_membership WHERE user_id = 'user-new-owner' AND role = 'owner'`).Scan(&count); err != nil {
+	if err := databaseDB.QueryRow(`SELECT COUNT(*) FROM atombase_membership WHERE user_id = 'user-new-owner' AND role = 'owner'`).Scan(&count); err != nil {
 		t.Fatalf("count created member: %v", err)
 	}
 	if count != 1 {
@@ -315,7 +316,7 @@ func TestCreateOrganizationMember_OnlyOwnerCanAssignOwnerRole(t *testing.T) {
 }
 
 func TestOrganizationMembership_PreservesLastOwner(t *testing.T) {
-	api, tenantDB, _ := setupOrganizationMembershipAPI(t)
+	api, databaseDB, _ := setupOrganizationMembershipAPI(t)
 
 	memberRole := "member"
 	if _, err := api.updateOrganizationMember(context.Background(), &orgActor{Session: &Session{Id: "sess-owner", UserID: "user-owner"}, UserID: "user-owner"}, "org-1", "user-owner", updateOrganizationMemberRequest{
@@ -329,7 +330,7 @@ func TestOrganizationMembership_PreservesLastOwner(t *testing.T) {
 	}
 
 	now := time.Now().UTC().Format(time.RFC3339)
-	if _, err := tenantDB.Exec(`INSERT INTO atombase_membership (user_id, role, status, created_at) VALUES ('user-owner-2', 'owner', 'active', ?)`, now); err != nil {
+	if _, err := databaseDB.Exec(`INSERT INTO atombase_membership (user_id, role, status, created_at) VALUES ('user-owner-2', 'owner', 'active', ?)`, now); err != nil {
 		t.Fatalf("seed second owner: %v", err)
 	}
 
@@ -338,7 +339,7 @@ func TestOrganizationMembership_PreservesLastOwner(t *testing.T) {
 	}
 
 	var remaining int
-	if err := tenantDB.QueryRow(`SELECT COUNT(*) FROM atombase_membership WHERE role = 'owner' AND status = 'active'`).Scan(&remaining); err != nil {
+	if err := databaseDB.QueryRow(`SELECT COUNT(*) FROM atombase_membership WHERE role = 'owner' AND status = 'active'`).Scan(&remaining); err != nil {
 		t.Fatalf("count owners: %v", err)
 	}
 	if remaining != 1 {
@@ -363,10 +364,10 @@ func TestOrganizationMembership_HidesOrganizationExistenceFromOutsiders(t *testi
 }
 
 func TestGetOrganizationContext_ReturnsOrganizationMembersAndInvites(t *testing.T) {
-	api, tenantDB, _ := setupOrganizationMembershipAPI(t)
+	api, databaseDB, _ := setupOrganizationMembershipAPI(t)
 
 	expiresAt := time.Now().UTC().Add(24 * time.Hour).Format(time.RFC3339)
-	if _, err := tenantDB.Exec(`
+	if _, err := databaseDB.Exec(`
 		INSERT INTO atombase_invites (id, email, role, invited_by, expires_at, created_at)
 		VALUES ('invite-1', 'invitee@example.com', 'member', 'user-owner', ?, ?)
 	`, expiresAt, time.Now().UTC().Format(time.RFC3339)); err != nil {
@@ -401,10 +402,10 @@ func TestGetOrganizationContext_ReturnsOrganizationMembersAndInvites(t *testing.
 }
 
 func TestGetOrganizationContext_ServiceCanReadWithoutMembership(t *testing.T) {
-	api, tenantDB, _ := setupOrganizationMembershipAPI(t)
+	api, databaseDB, _ := setupOrganizationMembershipAPI(t)
 
 	expiresAt := time.Now().UTC().Add(24 * time.Hour).Format(time.RFC3339)
-	if _, err := tenantDB.Exec(`
+	if _, err := databaseDB.Exec(`
 		INSERT INTO atombase_invites (id, email, role, invited_by, expires_at, created_at)
 		VALUES ('invite-2', 'ops@example.com', 'viewer', 'service', ?, ?)
 	`, expiresAt, time.Now().UTC().Format(time.RFC3339)); err != nil {
@@ -523,7 +524,7 @@ func TestListAndGetOrganizations_RespectMembershipVisibility(t *testing.T) {
 }
 
 func TestOrganizationInvites_FollowManagementAndAcceptanceFlow(t *testing.T) {
-	api, tenantDB, _ := setupOrganizationMembershipAPI(t)
+	api, databaseDB, _ := setupOrganizationMembershipAPI(t)
 	sent := outboundEmail{}
 	oldSendEmail := sendEmailFn
 	sendEmailFn = func(_ context.Context, msg outboundEmail) error {
@@ -585,7 +586,7 @@ func TestOrganizationInvites_FollowManagementAndAcceptanceFlow(t *testing.T) {
 	}
 
 	var inviteCount int
-	if err := tenantDB.QueryRow(`SELECT COUNT(*) FROM atombase_invites WHERE id = ?`, invite.ID).Scan(&inviteCount); err != nil {
+	if err := databaseDB.QueryRow(`SELECT COUNT(*) FROM atombase_invites WHERE id = ?`, invite.ID).Scan(&inviteCount); err != nil {
 		t.Fatalf("count invites: %v", err)
 	}
 	if inviteCount != 0 {
@@ -594,7 +595,7 @@ func TestOrganizationInvites_FollowManagementAndAcceptanceFlow(t *testing.T) {
 }
 
 func TestOrganizationInvites_RollsBackWhenEmailDeliveryFails(t *testing.T) {
-	api, tenantDB, _ := setupOrganizationMembershipAPI(t)
+	api, databaseDB, _ := setupOrganizationMembershipAPI(t)
 	oldSendEmail := sendEmailFn
 	sendEmailFn = func(_ context.Context, msg outboundEmail) error {
 		return errors.New("smtp unavailable")
@@ -613,7 +614,7 @@ func TestOrganizationInvites_RollsBackWhenEmailDeliveryFails(t *testing.T) {
 	}
 
 	var count int
-	if err := tenantDB.QueryRow(`SELECT COUNT(*) FROM atombase_invites WHERE email = 'rollback@example.com'`).Scan(&count); err != nil {
+	if err := databaseDB.QueryRow(`SELECT COUNT(*) FROM atombase_invites WHERE email = 'rollback@example.com'`).Scan(&count); err != nil {
 		t.Fatalf("count rollback invites: %v", err)
 	}
 	if count != 0 {
@@ -622,7 +623,7 @@ func TestOrganizationInvites_RollsBackWhenEmailDeliveryFails(t *testing.T) {
 }
 
 func TestOrganizationInvites_ReinviteReplacesExistingInvite(t *testing.T) {
-	api, tenantDB, _ := setupOrganizationMembershipAPI(t)
+	api, databaseDB, _ := setupOrganizationMembershipAPI(t)
 	oldSendEmail := sendEmailFn
 	sendEmailFn = func(_ context.Context, msg outboundEmail) error { return nil }
 	t.Cleanup(func() { sendEmailFn = oldSendEmail })
@@ -656,7 +657,7 @@ func TestOrganizationInvites_ReinviteReplacesExistingInvite(t *testing.T) {
 	}
 
 	var count int
-	if err := tenantDB.QueryRow(`SELECT COUNT(*) FROM atombase_invites WHERE email = ?`, "reinvite@example.com").Scan(&count); err != nil {
+	if err := databaseDB.QueryRow(`SELECT COUNT(*) FROM atombase_invites WHERE email = ?`, "reinvite@example.com").Scan(&count); err != nil {
 		t.Fatalf("count reinvite rows: %v", err)
 	}
 	if count != 1 {
@@ -664,7 +665,7 @@ func TestOrganizationInvites_ReinviteReplacesExistingInvite(t *testing.T) {
 	}
 
 	var storedID, storedRole string
-	if err := tenantDB.QueryRow(`SELECT id, role FROM atombase_invites WHERE email = ?`, "reinvite@example.com").Scan(&storedID, &storedRole); err != nil {
+	if err := databaseDB.QueryRow(`SELECT id, role FROM atombase_invites WHERE email = ?`, "reinvite@example.com").Scan(&storedID, &storedRole); err != nil {
 		t.Fatalf("query reinvite row: %v", err)
 	}
 	if storedID != second.ID || storedRole != "owner" {
@@ -673,9 +674,9 @@ func TestOrganizationInvites_ReinviteReplacesExistingInvite(t *testing.T) {
 }
 
 func TestOrganizationInvites_RevokeRequiresInvitePermission(t *testing.T) {
-	api, tenantDB, _ := setupOrganizationMembershipAPI(t)
+	api, databaseDB, _ := setupOrganizationMembershipAPI(t)
 	now := time.Now().UTC().Add(24 * time.Hour).Format(time.RFC3339)
-	if _, err := tenantDB.Exec(`
+	if _, err := databaseDB.Exec(`
 		INSERT INTO atombase_invites (id, email, role, invited_by, expires_at, created_at)
 		VALUES ('invite-1', 'viewer@example.com', 'viewer', 'user-owner', ?, ?)
 	`, now, time.Now().UTC().Format(time.RFC3339)); err != nil {
@@ -705,7 +706,7 @@ func TestUpdateOrganization_UsesManagementPolicy(t *testing.T) {
 		Name: &renamed,
 	})
 	if err != nil {
-		t.Fatalf("owner update org: %v", err)
+		t.Fatalf("owner update organization: %v", err)
 	}
 	if org.Name != "Acme 2" {
 		t.Fatalf("expected renamed org, got %q", org.Name)
@@ -720,7 +721,7 @@ func TestUpdateOrganization_UsesManagementPolicy(t *testing.T) {
 }
 
 func TestTransferOrganizationOwnership_PromotesNewOwner(t *testing.T) {
-	api, tenantDB, _ := setupOrganizationMembershipAPI(t)
+	api, databaseDB, _ := setupOrganizationMembershipAPI(t)
 
 	org, err := api.transferOrganizationOwnership(context.Background(), &orgActor{Session: &Session{Id: "sess-owner", UserID: "user-owner"}, UserID: "user-owner"}, "org-1", transferOrganizationOwnershipRequest{
 		UserID: "user-member",
@@ -733,11 +734,11 @@ func TestTransferOrganizationOwnership_PromotesNewOwner(t *testing.T) {
 	}
 
 	var role string
-	if err := tenantDB.QueryRow(`SELECT role FROM atombase_membership WHERE user_id = 'user-member'`).Scan(&role); err != nil {
+	if err := databaseDB.QueryRow(`SELECT role FROM atombase_membership WHERE user_id = 'user-member'`).Scan(&role); err != nil {
 		t.Fatalf("load transferred role: %v", err)
 	}
 	if role != "owner" {
-		t.Fatalf("expected tenant owner role after transfer, got %s", role)
+		t.Fatalf("expected database owner role after transfer, got %s", role)
 	}
 }
 
@@ -751,7 +752,7 @@ func TestDeleteOrganization_UsesManagementPolicy(t *testing.T) {
 
 	err = api.deleteOrganization(context.Background(), &orgActor{Session: &Session{Id: "sess-owner", UserID: "user-owner"}, UserID: "user-owner"}, "org-1")
 	if err != nil {
-		t.Fatalf("owner delete org: %v", err)
+		t.Fatalf("owner delete organization: %v", err)
 	}
 
 	if _, err := api.getOrganizationRecord(context.Background(), "org-1"); !errors.Is(err, tools.ErrDatabaseNotFound) {

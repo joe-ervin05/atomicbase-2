@@ -2,12 +2,12 @@
 // Response Types - Discriminated unions for type-safe error handling
 // =============================================================================
 
-import type { AtomicbaseError } from "./AtomicbaseError.js";
+import type { AtombaseError } from "./AtombaseError.js";
 
 /**
  * Successful response with data and no error.
  */
-export interface AtomicbaseResponseSuccess<T> {
+export interface AtombaseResponseSuccess<T> {
   data: T;
   error: null;
 }
@@ -15,9 +15,9 @@ export interface AtomicbaseResponseSuccess<T> {
 /**
  * Failed response with error and no data.
  */
-export interface AtomicbaseResponseFailure {
+export interface AtombaseResponseFailure {
   data: null;
-  error: AtomicbaseError;
+  error: AtombaseError;
 }
 
 /**
@@ -26,31 +26,31 @@ export interface AtomicbaseResponseFailure {
  * ```ts
  * const { data, error } = await client.from('users').select()
  * if (error) {
- *   // error is AtomicbaseError, data is null
+ *   // error is AtombaseError, data is null
  * } else {
  *   // data is T[], error is null
  * }
  * ```
  */
-export type AtomicbaseResponse<T> =
-  | AtomicbaseResponseSuccess<T>
-  | AtomicbaseResponseFailure;
+export type AtombaseResponse<T> =
+  | AtombaseResponseSuccess<T>
+  | AtombaseResponseFailure;
 
 /**
  * Response with count - includes total count alongside data.
  */
-export interface AtomicbaseResponseWithCount<T> {
+export interface AtombaseResponseWithCount<T> {
   data: T | null;
   count: number | null;
-  error: AtomicbaseError | null;
+  error: AtombaseError | null;
 }
 
 // =============================================================================
 // Configuration Types
 // =============================================================================
 
-export interface AtomicbaseClientOptions {
-  /** Base URL of the AtomBase API */
+export interface AtombaseClientOptions {
+  /** Base URL of the Atombase API */
   url: string;
   /** Service API key for project-scoped requests */
   apiKey?: string;
@@ -121,9 +121,9 @@ export interface BatchResponse<T extends unknown[] = unknown[]> {
 /**
  * Batch response with potential error.
  */
-export type AtomicbaseBatchResponse<T extends unknown[] = unknown[]> =
+export type AtombaseBatchResponse<T extends unknown[] = unknown[]> =
   | { data: BatchResponse<T>; error: null }
-  | { data: null; error: AtomicbaseError };
+  | { data: null; error: AtombaseError };
 
 // =============================================================================
 // Definitions Types (Platform API)
@@ -325,6 +325,7 @@ export interface OrganizationMember {
 
 export interface Organization {
   id: string;
+  databaseId: string;
   name: string;
   ownerId: string;
   maxMembers?: number;

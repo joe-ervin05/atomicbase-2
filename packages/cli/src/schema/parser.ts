@@ -1,7 +1,7 @@
 import { existsSync, readdirSync } from "node:fs";
 import { resolve, basename } from "node:path";
 import { createJiti } from "jiti";
-import type { DefinitionDefinition } from "@atomicbase/definitions";
+import type { DefinitionDefinition } from "@atombase/definitions";
 
 const jiti = createJiti(import.meta.url);
 

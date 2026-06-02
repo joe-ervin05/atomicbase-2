@@ -33,9 +33,9 @@ type updateOrganizationMemberRequest struct {
 	Status *string `json:"status,omitempty"`
 }
 
-type tenantOpener func(databaseID, authToken string) (*sql.DB, error)
+type databaseOpener func(databaseID, authToken string) (*sql.DB, error)
 
-var openOrganizationTenantDB tenantOpener = func(databaseID, authToken string) (*sql.DB, error) {
+var openOrganizationDatabase databaseOpener = func(databaseID, authToken string) (*sql.DB, error) {
 	org := config.Cfg.TursoOrganization
 	if org == "" {
 		return nil, errors.New("TURSO_ORGANIZATION environment variable is not set but is required to access external databases")
@@ -144,7 +144,7 @@ func (api *API) handleDeleteOrganizationMember(w http.ResponseWriter, r *http.Re
 }
 
 func (api *API) listOrganizationMembers(ctx context.Context, actor *orgActor, organizationID string) ([]OrganizationMember, error) {
-	db, _, err := api.connOrganizationTenant(ctx, actor, organizationID)
+	db, _, err := api.connOrganizationDatabase(ctx, actor, organizationID)
 	if err != nil {
 		return nil, err
 	}
@@ -213,7 +213,7 @@ func (api *API) createOrganizationMember(ctx context.Context, actor *orgActor, o
 		req.Status = "active"
 	}
 
-	db, management, err := api.connOrganizationTenant(ctx, actor, organizationID)
+	db, management, err := api.connOrganizationDatabase(ctx, actor, organizationID)
 	if err != nil {
 		return nil, err
 	}
@@ -284,7 +284,7 @@ func (api *API) updateOrganizationMember(ctx context.Context, actor *orgActor, o
 		req.Status = &trimmed
 	}
 
-	db, management, err := api.connOrganizationTenant(ctx, actor, organizationID)
+	db, management, err := api.connOrganizationDatabase(ctx, actor, organizationID)
 	if err != nil {
 		return nil, err
 	}
@@ -377,7 +377,7 @@ func (api *API) updateOrganizationMember(ctx context.Context, actor *orgActor, o
 }
 
 func (api *API) deleteOrganizationMember(ctx context.Context, actor *orgActor, organizationID, memberUserID string) error {
-	db, management, err := api.connOrganizationTenant(ctx, actor, organizationID)
+	db, management, err := api.connOrganizationDatabase(ctx, actor, organizationID)
 	if err != nil {
 		return err
 	}
@@ -501,7 +501,7 @@ func permissionAllows(permission ManagementPermission, targetRole string) bool {
 	return false
 }
 
-func (api *API) connOrganizationTenant(ctx context.Context, actor *orgActor, organizationID string) (*sql.DB, ManagementMap, error) {
+func (api *API) connOrganizationDatabase(ctx context.Context, actor *orgActor, organizationID string) (*sql.DB, ManagementMap, error) {
 	if api == nil || api.store == nil {
 		return nil, nil, errors.New("auth api not initialized")
 	}
@@ -512,7 +512,7 @@ func (api *API) connOrganizationTenant(ctx context.Context, actor *orgActor, org
 		}
 		return nil, nil, err
 	}
-	db, err := openOrganizationTenantDB(databaseID, authToken)
+	db, err := openOrganizationDatabase(databaseID, authToken)
 	if err != nil {
 		return nil, nil, err
 	}

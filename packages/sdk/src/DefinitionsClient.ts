@@ -1,6 +1,6 @@
-import { AtomicbaseError } from "./AtomicbaseError.js";
+import { AtombaseError } from "./AtombaseError.js";
 import type {
-  AtomicbaseResponse,
+  AtombaseResponse,
   CreateDefinitionOptions,
   Definition,
   DefinitionVersion,
@@ -38,7 +38,7 @@ export class DefinitionsClient {
     return headers;
   }
 
-  private async request<T>(method: string, path: string, body?: unknown): Promise<AtomicbaseResponse<T>> {
+  private async request<T>(method: string, path: string, body?: unknown): Promise<AtombaseResponse<T>> {
     try {
       const response = await this.fetchFn(`${this.baseUrl}${path}`, {
         method,
@@ -48,33 +48,33 @@ export class DefinitionsClient {
 
       if (!response.ok) {
         const errorBody = await response.json().catch(() => ({}));
-        return { data: null, error: AtomicbaseError.fromResponse(errorBody, response.status) };
+        return { data: null, error: AtombaseError.fromResponse(errorBody, response.status) };
       }
 
       const text = await response.text();
       return { data: (text ? JSON.parse(text) : null) as T, error: null };
     } catch (err) {
-      return { data: null, error: AtomicbaseError.networkError(err) };
+      return { data: null, error: AtombaseError.networkError(err) };
     }
   }
 
-  list(): Promise<AtomicbaseResponse<Definition[]>> {
+  list(): Promise<AtombaseResponse<Definition[]>> {
     return this.request("GET", "/platform/definitions");
   }
 
-  get(name: string): Promise<AtomicbaseResponse<Definition>> {
+  get(name: string): Promise<AtombaseResponse<Definition>> {
     return this.request("GET", `/platform/definitions/${encodeURIComponent(name)}`);
   }
 
-  create(options: CreateDefinitionOptions): Promise<AtomicbaseResponse<Definition>> {
+  create(options: CreateDefinitionOptions): Promise<AtombaseResponse<Definition>> {
     return this.request("POST", "/platform/definitions", options);
   }
 
-  push(name: string, options: PushDefinitionOptions): Promise<AtomicbaseResponse<DefinitionVersion>> {
+  push(name: string, options: PushDefinitionOptions): Promise<AtombaseResponse<DefinitionVersion>> {
     return this.request("POST", `/platform/definitions/${encodeURIComponent(name)}/push`, options);
   }
 
-  history(name: string): Promise<AtomicbaseResponse<DefinitionVersion[]>> {
+  history(name: string): Promise<AtombaseResponse<DefinitionVersion[]>> {
     return this.request("GET", `/platform/definitions/${encodeURIComponent(name)}/history`);
   }
 }

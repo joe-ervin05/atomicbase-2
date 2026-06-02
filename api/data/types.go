@@ -17,8 +17,8 @@ type API struct {
 	definitions *definitions.Service
 }
 
-// TenantConnection represents an external tenant database connection with cached schema.
-type TenantConnection struct {
+// DatabaseConnection represents an external database connection with cached schema.
+type DatabaseConnection struct {
 	Client          *sql.DB     // SQL database connection
 	Token           string      // authentication token
 	Schema          SchemaCache // Cached schema for validation

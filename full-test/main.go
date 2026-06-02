@@ -39,9 +39,9 @@ type config struct {
 	requestTimout time.Duration
 
 	// Intensive test settings
-	concurrency   int // Number of concurrent workers
-	batchSize     int // Max rows per batch operation
-	maxRows       int // Max rows for large reads (should be <= server limit)
+	concurrency    int // Number of concurrent workers
+	batchSize      int // Max rows per batch operation
+	maxRows        int // Max rows for large reads (should be <= server limit)
 	stressMode     bool
 	stressWorkers  int
 	stressDuration time.Duration
@@ -53,9 +53,9 @@ type config struct {
 }
 
 type provisionedResources struct {
-	workspaceDir string
-	templateName string
-	databaseName string
+	workspaceDir   string
+	definitionName string
+	databaseName   string
 }
 
 type todo struct {
@@ -115,13 +115,13 @@ func main() {
 		}
 		resources = provisioned
 		cfg.database = resources.databaseName
-		fmt.Printf("Provisioned template=%s database=%s\n", resources.templateName, resources.databaseName)
+		fmt.Printf("Provisioned definition=%s database=%s\n", resources.definitionName, resources.databaseName)
 
 		if !cfg.keepResources {
 			defer cleanupProvisionedResources(cfg, resources)
 		}
 	} else if cfg.database == "" {
-		fmt.Fprintln(os.Stderr, "Database is required when -provision=false (set -database or ATOMICBASE_DATABASE)")
+		fmt.Fprintln(os.Stderr, "Database is required when -provision=false (set -database or ATOMBASE_DATABASE)")
 		os.Exit(1)
 	}
 
@@ -684,14 +684,14 @@ func loadConfig() config {
 	wd, _ := os.Getwd()
 	repoRootDefault := envOr("SIM_REPO_ROOT", filepath.Clean(filepath.Join(wd, "..")))
 
-	baseURL := envOr("ATOMICBASE_BASE_URL", "http://localhost:8080")
-	apiKey := envOr("ATOMICBASE_API_KEY", "")
-	database := envOr("ATOMICBASE_DATABASE", "")
-	table := envOr("ATOMICBASE_TABLE", "todos")
-	token := envOr("ATOMICBASE_TOKEN", "")
-	idCol := envOr("ATOMICBASE_ID_COLUMN", "id")
-	titleCol := envOr("ATOMICBASE_TITLE_COLUMN", "title")
-	completedCol := envOr("ATOMICBASE_COMPLETED_COLUMN", "completed")
+	baseURL := envOr("ATOMBASE_BASE_URL", "http://localhost:8080")
+	apiKey := envOr("ATOMBASE_API_KEY", "")
+	database := envOr("ATOMBASE_DATABASE", "")
+	table := envOr("ATOMBASE_TABLE", "todos")
+	token := envOr("ATOMBASE_TOKEN", "")
+	idCol := envOr("ATOMBASE_ID_COLUMN", "id")
+	titleCol := envOr("ATOMBASE_TITLE_COLUMN", "title")
+	completedCol := envOr("ATOMBASE_COMPLETED_COLUMN", "completed")
 	repoRoot := repoRootDefault
 
 	steps := envIntOr("SIM_STEPS", 500)
@@ -715,9 +715,9 @@ func loadConfig() config {
 	benchmarkDurationSec := envIntOr("SIM_BENCHMARK_DURATION", 10)
 	benchmarkWarmupSec := envIntOr("SIM_BENCHMARK_WARMUP", 2)
 
-	flag.StringVar(&baseURL, "base-url", baseURL, "Atomicbase API base URL")
+	flag.StringVar(&baseURL, "base-url", baseURL, "Atombase API base URL")
 	flag.StringVar(&apiKey, "api-key", apiKey, "API key for CLI provisioning and API auth")
-	flag.StringVar(&repoRoot, "repo-root", repoRoot, "Atomicbase repo root (for invoking CLI)")
+	flag.StringVar(&repoRoot, "repo-root", repoRoot, "Atombase repo root (for invoking CLI)")
 	flag.StringVar(&database, "database", database, "Database header value")
 	flag.StringVar(&table, "table", table, "Table to test")
 	flag.StringVar(&token, "token", token, "Bearer token (optional if API auth disabled)")
@@ -727,8 +727,8 @@ func loadConfig() config {
 	flag.IntVar(&steps, "steps", steps, "Operations per run")
 	flag.Int64Var(&seed, "seed", seed, "Deterministic seed")
 	flag.BoolVar(&loop, "loop", loop, "Run forever, incrementing seed per run")
-	flag.BoolVar(&provision, "provision", provision, "Provision template/database via CLI before simulation")
-	flag.BoolVar(&keepResources, "keep-resources", keepResources, "Keep provisioned template/database after run")
+	flag.BoolVar(&provision, "provision", provision, "Provision definition/database via CLI before simulation")
+	flag.BoolVar(&keepResources, "keep-resources", keepResources, "Keep provisioned database after run")
 	flag.BoolVar(&failOn4xx, "fail-on-4xx", failOn4xx, "Fail when API returns any 4xx")
 	flag.IntVar(&timeoutMS, "timeout-ms", timeoutMS, "HTTP timeout in milliseconds")
 
@@ -745,25 +745,25 @@ func loadConfig() config {
 	flag.Parse()
 
 	return config{
-		baseURL:        baseURL,
-		apiKey:         apiKey,
-		repoRoot:       repoRoot,
-		database:       database,
-		table:          table,
-		token:          token,
-		idColumn:       idCol,
-		titleColumn:    titleCol,
-		completedCol:   completedCol,
-		steps:          steps,
-		seed:           seed,
-		loop:           loop,
-		provision:      provision,
-		keepResources:  keepResources,
-		failOn4xx:      failOn4xx,
-		requestTimout:  time.Duration(timeoutMS) * time.Millisecond,
-		concurrency:    concurrency,
-		batchSize:      batchSize,
-		maxRows:        maxRows,
+		baseURL:           baseURL,
+		apiKey:            apiKey,
+		repoRoot:          repoRoot,
+		database:          database,
+		table:             table,
+		token:             token,
+		idColumn:          idCol,
+		titleColumn:       titleCol,
+		completedCol:      completedCol,
+		steps:             steps,
+		seed:              seed,
+		loop:              loop,
+		provision:         provision,
+		keepResources:     keepResources,
+		failOn4xx:         failOn4xx,
+		requestTimout:     time.Duration(timeoutMS) * time.Millisecond,
+		concurrency:       concurrency,
+		batchSize:         batchSize,
+		maxRows:           maxRows,
 		stressMode:        stressMode,
 		stressWorkers:     stressWorkers,
 		stressDuration:    time.Duration(stressDurationSec) * time.Second,
@@ -1178,7 +1178,7 @@ func provisionTestResources(cfg config) (*provisionedResources, error) {
 	}
 
 	nameSuffix := fmt.Sprintf("%d-%d", cfg.seed, time.Now().Unix())
-	templateName := "full-test-template-" + sanitizeName(nameSuffix)
+	definitionName := "full-test-definition-" + sanitizeName(nameSuffix)
 	databaseName := "full-test-db-" + sanitizeName(nameSuffix)
 
 	if err := os.MkdirAll(filepath.Join(workspaceDir, "schemas"), 0o755); err != nil {
@@ -1192,29 +1192,28 @@ func provisionTestResources(cfg config) (*provisionedResources, error) {
 };
 `, cfg.baseURL, cfg.apiKey)
 
-	if err := os.WriteFile(filepath.Join(workspaceDir, "atomicbase.config.ts"), []byte(configFile), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(workspaceDir, "atombase.config.ts"), []byte(configFile), 0o644); err != nil {
 		return nil, err
 	}
 
-	templateImportPath := filepath.ToSlash(filepath.Join(cfg.repoRoot, "packages", "template", "dist", "index.js"))
-	schemaPath := filepath.Join(workspaceDir, "schemas", templateName+".schema.ts")
-	if err := os.WriteFile(schemaPath, []byte(complexSchemaTS(templateName, templateImportPath, cfg.seed)), 0o644); err != nil {
+	definitionsImportPath := filepath.ToSlash(filepath.Join(cfg.repoRoot, "packages", "definitions", "dist", "index.js"))
+	schemaPath := filepath.Join(workspaceDir, "schemas", definitionName+".global.ts")
+	if err := os.WriteFile(schemaPath, []byte(complexDefinitionTS(definitionName, definitionsImportPath, cfg.seed)), 0o644); err != nil {
 		return nil, err
 	}
 
-	if err := runAtomicbaseCLI(cfg.repoRoot, workspaceDir, "templates", "push", templateName); err != nil {
-		return nil, fmt.Errorf("templates push failed: %w", err)
+	if err := runAtombaseCLI(cfg.repoRoot, workspaceDir, "definitions", "push", definitionName); err != nil {
+		return nil, fmt.Errorf("definitions push failed: %w", err)
 	}
 
-	if err := runAtomicbaseCLI(cfg.repoRoot, workspaceDir, "databases", "create", databaseName, "--template", templateName); err != nil {
-		_ = runAtomicbaseCLI(cfg.repoRoot, workspaceDir, "templates", "delete", templateName, "--force")
+	if err := runAtombaseCLI(cfg.repoRoot, workspaceDir, "databases", "create", databaseName, "--definition", definitionName); err != nil {
 		return nil, fmt.Errorf("databases create failed: %w", err)
 	}
 
 	return &provisionedResources{
-		workspaceDir: workspaceDir,
-		templateName: templateName,
-		databaseName: databaseName,
+		workspaceDir:   workspaceDir,
+		definitionName: definitionName,
+		databaseName:   databaseName,
 	}, nil
 }
 
@@ -1223,12 +1222,8 @@ func cleanupProvisionedResources(cfg config, resources *provisionedResources) {
 		return
 	}
 
-	if err := runAtomicbaseCLI(cfg.repoRoot, resources.workspaceDir, "databases", "delete", resources.databaseName, "--force"); err != nil {
+	if err := runAtombaseCLI(cfg.repoRoot, resources.workspaceDir, "databases", "delete", resources.databaseName, "--force"); err != nil {
 		fmt.Fprintf(os.Stderr, "Cleanup warning (database delete): %v\n", err)
-	}
-
-	if err := runAtomicbaseCLI(cfg.repoRoot, resources.workspaceDir, "templates", "delete", resources.templateName, "--force"); err != nil {
-		fmt.Fprintf(os.Stderr, "Cleanup warning (template delete): %v\n", err)
 	}
 
 	if err := os.RemoveAll(resources.workspaceDir); err != nil {
@@ -1236,12 +1231,12 @@ func cleanupProvisionedResources(cfg config, resources *provisionedResources) {
 	}
 }
 
-func runAtomicbaseCLI(repoRoot, workspaceDir string, args ...string) error {
+func runAtombaseCLI(repoRoot, workspaceDir string, args ...string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
 	// Primary path: run the CLI package directly through pnpm in the workspace.
-	cliArgs := append([]string{"--filter", "@atomicbase/cli", "exec", "node", "bin/atomicbase.js"}, args...)
+	cliArgs := append([]string{"--filter", "@atombase/cli", "exec", "node", "bin/atombase.js"}, args...)
 	cmd := exec.CommandContext(ctx, "pnpm", cliArgs...)
 	cmd.Dir = repoRoot
 	cmd.Env = append(os.Environ(), "INIT_CWD="+workspaceDir)
@@ -1255,7 +1250,7 @@ func runAtomicbaseCLI(repoRoot, workspaceDir string, args ...string) error {
 	}
 
 	// Fallback path: invoke the CLI entry file by absolute path.
-	fallbackArgs := append([]string{filepath.Join(repoRoot, "packages", "cli", "bin", "atomicbase.js")}, args...)
+	fallbackArgs := append([]string{filepath.Join(repoRoot, "packages", "cli", "bin", "atombase.js")}, args...)
 	fallback := exec.CommandContext(ctx, "node", fallbackArgs...)
 	fallback.Dir = workspaceDir
 	fallback.Env = append(os.Environ(), "INIT_CWD="+workspaceDir)
@@ -1272,7 +1267,7 @@ func runAtomicbaseCLI(repoRoot, workspaceDir string, args ...string) error {
 	return nil
 }
 
-func complexSchemaTS(templateName, templateImportPath string, seed int64) string {
+func complexDefinitionTS(definitionName, definitionsImportPath string, seed int64) string {
 	r := rand.New(rand.NewSource(seed))
 
 	minDisplayLen := 2 + r.Intn(4)
@@ -1315,6 +1310,7 @@ func complexSchemaTS(templateName, templateImportPath string, seed int64) string
 	}
 
 	extraTables := ""
+	extraAccess := ""
 	if r.Intn(2) == 0 {
 		extraTables += `
   project_members: defineTable({
@@ -1325,6 +1321,8 @@ func complexSchemaTS(templateName, templateImportPath string, seed int64) string
   }).index("idx_project_members_user", ["user_id"]),
 
 `
+		extraAccess += `
+    project_members: openTableAccess,`
 	}
 	if r.Intn(2) == 0 {
 		extraTables += `
@@ -1336,11 +1334,20 @@ func complexSchemaTS(templateName, templateImportPath string, seed int64) string
   }),
 
 `
+		extraAccess += `
+    todo_reactions: openTableAccess,`
 	}
 
-	return fmt.Sprintf(`import { defineSchema, defineTable, c, sql } from %q;
+	return fmt.Sprintf(`import { defineGlobal, defineAccess, defineSchema, defineTable, c, sql, allow } from %q;
 
-export default defineSchema(%q, {
+const openTableAccess = {
+  select: allow(),
+  insert: allow(),
+  update: allow(),
+  delete: allow(),
+};
+
+const schema = defineSchema(%q, {
   users: defineTable({
     id: c.integer().primaryKey(),
     email: c.text().notNull().unique().collate(%q),
@@ -1440,7 +1447,23 @@ export default defineSchema(%q, {
     created_at: c.text().notNull().default(sql("CURRENT_TIMESTAMP")),
   }).index("idx_audit_actor", ["actor_id"]),
 });
-`, templateImportPath, templateName, emailCollation, minDisplayLen, minProjectNameLen, maxPriority, minTodoTitleLen, strings.Join(statusList, ","), maxPriority, optionalTodoCols, todoFTSColumns, extraTables)
+
+export default defineGlobal({
+  name: %q,
+  schema,
+  access: defineAccess(schema, {
+    users: openTableAccess,
+    workspaces: openTableAccess,
+    projects: openTableAccess,
+    tags: openTableAccess,
+    project_tags: openTableAccess,
+    todos: openTableAccess,
+    comments: openTableAccess,
+    attachments: openTableAccess,%s
+    audit_events: openTableAccess,
+  }),
+});
+`, definitionsImportPath, definitionName, emailCollation, minDisplayLen, minProjectNameLen, maxPriority, minTodoTitleLen, strings.Join(statusList, ","), maxPriority, optionalTodoCols, todoFTSColumns, extraTables, definitionName, extraAccess)
 }
 
 func sanitizeName(s string) string {

@@ -14,8 +14,7 @@
     "forceConsistentCasingInFileNames": true
   },
   "include": [
-    "src/**/*",
-    "src/TenantsClient.ts"
+    "src/**/*"
   ],
   "exclude": [
     "node_modules",

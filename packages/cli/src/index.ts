@@ -10,21 +10,21 @@ import { databasesCommand } from "./commands/databases.js";
 const workingDir = process.env.INIT_CWD || process.cwd();
 loadEnv({ path: resolve(workingDir, ".env") });
 
-// Re-export config helper for use in atomicbase.config.ts files
+// Re-export config helper for use in atombase.config.ts files
 export { defineConfig } from "./config.js";
-export type { AtomicbaseConfig } from "./config.js";
+export type { AtombaseConfig } from "./config.js";
 
 const program = new Command();
 
 program
-  .name("atomicbase")
-  .description("CLI for AtomBase project, definition, and database management")
+  .name("atombase")
+  .description("CLI for Atombase project, definition, and database management")
   .version("0.1.0")
   .option("-k, --insecure", "Skip SSL certificate verification")
   .hook("preAction", (thisCommand) => {
     // Set env var before config loads so all commands pick it up
     if (thisCommand.opts().insecure) {
-      process.env.ATOMICBASE_INSECURE = "1";
+      process.env.ATOMBASE_INSECURE = "1";
       console.log("Warning: SSL certificate verification disabled\n");
     }
   })

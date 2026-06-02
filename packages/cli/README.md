@@ -1,30 +1,30 @@
-# @atomicbase/cli
+# @atombase/cli
 
-Command-line interface for AtomBase project, definition, and database management.
+Command-line interface for Atombase project, definition, and database management.
 
 ## Installation
 
 ```bash
-npm install -D @atomicbase/cli
+npm install -D @atombase/cli
 # or
-pnpm add -D @atomicbase/cli
+pnpm add -D @atombase/cli
 ```
 
 ## Configuration
 
-Create `.env` or `atomicbase.config.ts` in your project root:
+Create `.env` or `atombase.config.ts` in your project root:
 
 ```bash
 # .env
-ATOMICBASE_URL=http://localhost:8080
-ATOMICBASE_API_KEY=your-api-key
+ATOMBASE_URL=http://localhost:8080
+ATOMBASE_API_KEY=your-api-key
 ```
 
 Or use a config file:
 
 ```typescript
-// atomicbase.config.ts
-import { defineConfig } from "@atomicbase/cli";
+// atombase.config.ts
+import { defineConfig } from "@atombase/cli";
 
 export default defineConfig({
   url: "http://localhost:8080",
@@ -38,10 +38,10 @@ export default defineConfig({
 ### Initialize Project
 
 ```bash
-npx atomicbase init
+npx atombase init
 ```
 
-Creates `atomicbase.config.ts` and `definitions/` directory.
+Creates `atombase.config.ts` and `definitions/` directory.
 
 ### Definitions
 
@@ -49,22 +49,22 @@ Manage project definitions on the server.
 
 ```bash
 # List all definitions
-npx atomicbase definitions list
+npx atombase definitions list
 
 # Get definition details
-npx atomicbase definitions get <name>
+npx atombase definitions get <name>
 
 # Push all local definition files to server
-npx atomicbase definitions push
+npx atombase definitions push
 
 # Push a specific definition by name
-npx atomicbase definitions push <name>
+npx atombase definitions push <name>
 
 # Preview schema changes without applying
-npx atomicbase definitions diff [file]
+npx atombase definitions diff [file]
 
 # View version history
-npx atomicbase definitions history <name>
+npx atombase definitions history <name>
 
 ```
 
@@ -74,16 +74,16 @@ Manage project databases.
 
 ```bash
 # List all databases
-npx atomicbase databases list
+npx atombase databases list
 
 # Get database details
-npx atomicbase databases get <id>
+npx atombase databases get <id>
 
 # Create a new database
-npx atomicbase databases create <id> --definition <definition>
+npx atombase databases create <id> --definition <definition>
 
 # Delete a database
-npx atomicbase databases delete <id> [-f]
+npx atombase databases delete <id> [-f]
 ```
 
 ## Definition Files
@@ -96,7 +96,7 @@ Define definitions in the `definitions/` directory:
 
 ```typescript
 // definitions/my-app.global.ts
-import { defineGlobal, defineSchema, defineAccess, defineTable, c, allow, isNull } from "@atomicbase/definitions";
+import { defineGlobal, defineSchema, defineAccess, defineTable, c, allow, isNull } from "@atombase/definitions";
 
 const schema = defineSchema({
   users: defineTable({
@@ -131,19 +131,19 @@ users: {
 ## Workflow
 
 1. Define a definition locally in `definitions/`
-2. Preview changes: `npx atomicbase definitions diff`
-3. Push to server: `npx atomicbase definitions push`
-4. Create databases: `npx atomicbase databases create acme --definition my-app`
-5. Tenant databases migrate lazily on first access
+2. Preview changes: `npx atombase definitions diff`
+3. Push to server: `npx atombase definitions push`
+4. Create databases: `npx atombase databases create acme --definition my-app`
+5. Databases migrate lazily on first access
 
 ## Options
 
 ```bash
 # Skip SSL certificate verification (development only)
-npx atomicbase -k definitions list
-npx atomicbase --insecure definitions list
+npx atombase -k definitions list
+npx atombase --insecure definitions list
 ```
 
 ## License
 
-AtomBase is [fair-source](https://fair.io) licensed under [FSL-1.1-MIT](../../LICENSE).
+Atombase is [fair-source](https://fair.io) licensed under [FSL-1.1-MIT](../../LICENSE).

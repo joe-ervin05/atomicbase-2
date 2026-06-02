@@ -1,6 +1,6 @@
-# AtomBase Core Model
+# Atombase Core Model
 
-AtomBase uses one product vocabulary across docs, CLI commands, SDK surfaces, API routes, and storage:
+Atombase uses one product vocabulary across docs, CLI commands, SDK surfaces, API routes, and storage:
 
 ```text
 Project -> Definition -> Database -> Session/Auth Context -> Query
@@ -8,12 +8,12 @@ Project -> Definition -> Database -> Session/Auth Context -> Query
 
 ## Project
 
-A project is the running AtomBase backend plus its primary metadata database, configuration, service key, and tenant databases.
+A project is the running Atombase backend plus its primary metadata database, configuration, service key, and application databases.
 
 Project-scoped surfaces include:
 
 - service configuration and environment variables
-- CLI configuration in `atomicbase.config.ts`
+- CLI configuration in `atombase.config.ts`
 - platform routes for project-owned definitions and databases
 - SDK clients created with `createClient({ url, apiKey })` or `createClient({ url, sessionToken })`
 
@@ -30,9 +30,9 @@ Definition scope is a property of the definition, not a separate top-level abstr
 
 - `global`: project-managed databases
 - `user`: one self-provisioned database per authenticated user
-- `organization`: one database per organization, with tenant-local membership
+- `organization`: one database per organization, with database-local membership
 
-Avoid older template wording. Definitions are the canonical abstraction.
+Definitions are the canonical abstraction.
 
 ## Database
 
@@ -44,7 +44,7 @@ Every database records:
 - the definition version it is currently running
 - routing metadata used by the API and SDK
 
-Database routes and SDK methods should describe concrete database instances, not tenants, templates, or schemas.
+Database routes and SDK methods should describe concrete database instances.
 
 ## Session/Auth Context
 

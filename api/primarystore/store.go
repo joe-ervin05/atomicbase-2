@@ -109,7 +109,7 @@ func (s *Store) LookupDatabaseByName(name string) (DatabaseMeta, error) {
 	return s.LookupDatabaseByID(name)
 }
 
-func (s *Store) LookupOrganizationDatabase(ctx context.Context, organizationID string) (DatabaseMeta, error) {
+func (s *Store) lookupOrganizationDatabaseMeta(ctx context.Context, organizationID string) (DatabaseMeta, error) {
 	if s == nil || s.conn == nil {
 		return DatabaseMeta{}, errors.New("primary store not initialized")
 	}
@@ -140,8 +140,8 @@ func (s *Store) LookupOrganizationDatabase(ctx context.Context, organizationID s
 	return meta, nil
 }
 
-func (s *Store) LookupOrganizationTenant(ctx context.Context, organizationID string) (string, string, error) {
-	meta, err := s.LookupOrganizationDatabase(ctx, organizationID)
+func (s *Store) LookupOrganizationDatabase(ctx context.Context, organizationID string) (string, string, error) {
+	meta, err := s.lookupOrganizationDatabaseMeta(ctx, organizationID)
 	if err != nil {
 		return "", "", err
 	}
@@ -149,7 +149,7 @@ func (s *Store) LookupOrganizationTenant(ctx context.Context, organizationID str
 }
 
 func (s *Store) LookupOrganizationAuthz(ctx context.Context, organizationID string) (string, string, definitions.ManagementMap, error) {
-	meta, err := s.LookupOrganizationDatabase(ctx, organizationID)
+	meta, err := s.lookupOrganizationDatabaseMeta(ctx, organizationID)
 	if err != nil {
 		return "", "", nil, err
 	}
@@ -268,33 +268,20 @@ func (s *Store) ResolveDatabaseTarget(ctx context.Context, principal definitions
 		target.AuthToken = token
 		return target, nil
 	}
-	parts := strings.SplitN(header, ":", 2)
-	if len(parts) != 2 || parts[1] == "" {
-		return definitions.DatabaseTarget{}, tools.InvalidRequestErr("Database header must be formatted as <type>:<name>")
-	}
-	kind, name := parts[0], parts[1]
+	return s.resolveDatabaseTargetByID(ctx, header)
+}
 
-	var row *sql.Row
-	switch definitions.DefinitionType(kind) {
-	case definitions.DefinitionTypeGlobal:
-		row = s.conn.QueryRowContext(ctx, `
-			SELECT d.id, d.definition_id, def.name, def.definition_type, d.definition_version, d.auth_token_encrypted
-			FROM atombase_databases d
-			JOIN atombase_definitions def ON def.id = d.definition_id
-			WHERE d.id = ? AND def.definition_type = 'global'
-		`, name)
-	case "org":
-		row = s.conn.QueryRowContext(ctx, `
-			SELECT d.id, d.definition_id, def.name, def.definition_type, d.definition_version, d.auth_token_encrypted
-			FROM atombase_organizations o
-			JOIN atombase_databases d ON d.id = o.database_id
-			JOIN atombase_definitions def ON def.id = d.definition_id
-			WHERE o.id = ? AND def.definition_type = 'organization'
-		`, name)
-	default:
-		return definitions.DatabaseTarget{}, tools.InvalidRequestErr("invalid database type")
-	}
+func (s *Store) resolveDatabaseTargetByID(ctx context.Context, id string) (definitions.DatabaseTarget, error) {
+	row := s.conn.QueryRowContext(ctx, `
+		SELECT d.id, d.definition_id, def.name, def.definition_type, d.definition_version, d.auth_token_encrypted
+		FROM atombase_databases d
+		JOIN atombase_definitions def ON def.id = d.definition_id
+		WHERE d.id = ?
+	`, id)
+	return scanDatabaseTarget(row)
+}
 
+func scanDatabaseTarget(row *sql.Row) (definitions.DatabaseTarget, error) {
 	var target definitions.DatabaseTarget
 	var defType string
 	var encrypted []byte

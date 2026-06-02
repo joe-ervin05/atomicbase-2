@@ -96,7 +96,7 @@ func buildOrganizationInviteEmail(org *Organization, invite *OrganizationInvite)
 
 	return outboundEmail{
 		To:      invite.Email,
-		Subject: fmt.Sprintf("You're invited to %s on Atomicbase", org.Name),
+		Subject: fmt.Sprintf("You're invited to %s on Atombase", org.Name),
 		Text:    strings.Join(lines, "\n"),
 	}, nil
 }
@@ -107,7 +107,7 @@ func buildMagicLinkEmail(email, token string) (outboundEmail, error) {
 		return outboundEmail{}, err
 	}
 	lines := []string{
-		"Use this link to sign in to Atomicbase:",
+		"Use this link to sign in to Atombase:",
 		"",
 		url,
 		"",
@@ -121,7 +121,7 @@ func buildMagicLinkEmail(email, token string) (outboundEmail, error) {
 
 	return outboundEmail{
 		To:      NormalizeEmail(email),
-		Subject: "Your Atomicbase sign-in link",
+		Subject: "Your Atombase sign-in link",
 		Text:    strings.Join(lines, "\n"),
 	}, nil
 }

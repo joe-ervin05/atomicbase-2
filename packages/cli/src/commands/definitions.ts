@@ -9,7 +9,7 @@ import {
   type Merge,
   type DefinitionResponse,
 } from "../api.js";
-import type { DefinitionDefinition, SchemaDefinition, TableDefinition } from "@atomicbase/definitions";
+import type { DefinitionDefinition, SchemaDefinition, TableDefinition } from "@atombase/definitions";
 
 async function confirm(question: string): Promise<boolean> {
   const rl = createInterface({
@@ -357,7 +357,7 @@ async function listDefinitions(): Promise<void> {
     const definitions = await api.listDefinitions();
     if (definitions.length === 0) {
       console.log("No definitions found.");
-      console.log("\nCreate one with: atomicbase definitions push");
+      console.log("\nCreate one with: atombase definitions push");
       return;
     }
 
@@ -421,7 +421,7 @@ async function pushDefinitions(definitionName?: string): Promise<void> {
 
   if (definitions.length === 0) {
     console.log(`No definition files found in ${config.schemas}/`);
-    console.log("Create one with: atomicbase init");
+    console.log("Create one with: atombase init");
     return;
   }
 

@@ -84,12 +84,12 @@ func TestResolveDatabaseTarget(t *testing.T) {
 	_, _ = db.Exec(`INSERT INTO atombase_users (id, database_id) VALUES ('user-1', 'user-notes-db')`)
 	_, _ = db.Exec(`INSERT INTO atombase_organizations (id, database_id, name, owner_id) VALUES ('org-1', 'org-db', 'Acme', 'user-1')`)
 
-	global, err := store.ResolveDatabaseTarget(context.Background(), definitions.Principal{}, "global:global-market")
+	direct, err := store.ResolveDatabaseTarget(context.Background(), definitions.Principal{}, "global-market")
 	if err != nil {
-		t.Fatalf("resolve global failed: %v", err)
+		t.Fatalf("resolve direct database id failed: %v", err)
 	}
-	if global.DatabaseID != "global-market" {
-		t.Fatalf("expected global-market, got %s", global.DatabaseID)
+	if direct.DatabaseID != "global-market" {
+		t.Fatalf("expected global-market, got %s", direct.DatabaseID)
 	}
 
 	user, err := store.ResolveDatabaseTarget(context.Background(), definitions.Principal{UserID: "user-1"}, "")
@@ -100,12 +100,12 @@ func TestResolveDatabaseTarget(t *testing.T) {
 		t.Fatalf("expected user-notes-db, got %s", user.DatabaseID)
 	}
 
-	org, err := store.ResolveDatabaseTarget(context.Background(), definitions.Principal{UserID: "user-1"}, "org:org-1")
+	orgDirect, err := store.ResolveDatabaseTarget(context.Background(), definitions.Principal{UserID: "user-1"}, "org-db")
 	if err != nil {
-		t.Fatalf("resolve org failed: %v", err)
+		t.Fatalf("resolve org database id failed: %v", err)
 	}
-	if org.DatabaseID != "org-db" {
-		t.Fatalf("expected org-db, got %s", org.DatabaseID)
+	if orgDirect.DatabaseID != "org-db" {
+		t.Fatalf("expected org-db, got %s", orgDirect.DatabaseID)
 	}
 }
 

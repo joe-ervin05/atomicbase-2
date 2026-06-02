@@ -1,7 +1,7 @@
 {
-  "name": "@atomicbase/definitions",
+  "name": "@atombase/definitions",
   "version": "0.1.0",
-  "description": "TypeScript definition authoring for AtomBase",
+  "description": "TypeScript definition authoring for Atombase",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -22,7 +22,7 @@
     "typescript": "^5.3.3"
   },
   "keywords": [
-    "atomicbase",
+    "atombase",
     "definitions",
     "schema",
     "sqlite",

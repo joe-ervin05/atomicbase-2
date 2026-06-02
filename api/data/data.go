@@ -31,39 +31,39 @@ func NewAPI(primaryStore *primarystore.Store) (*API, error) {
 }
 
 // connTurso opens a connection to an external Turso database by resolved target.
-func (api *API) connTurso(principal definitions.Principal, target definitions.DatabaseTarget) (TenantConnection, error) {
+func (api *API) connTurso(principal definitions.Principal, target definitions.DatabaseTarget) (DatabaseConnection, error) {
 	org := config.Cfg.TursoOrganization
 
 	if org == "" {
-		return TenantConnection{}, errors.New("TURSO_ORGANIZATION environment variable is not set but is required to access external databases")
+		return DatabaseConnection{}, errors.New("TURSO_ORGANIZATION environment variable is not set but is required to access external databases")
 	}
 
 	if api == nil || api.store == nil || api.store.DB() == nil {
-		return TenantConnection{}, errors.New("primary store not initialized")
+		return DatabaseConnection{}, errors.New("primary store not initialized")
 	}
 
 	if target.AuthToken == "" {
-		return TenantConnection{}, errors.New("database has no auth token configured")
+		return DatabaseConnection{}, errors.New("database has no auth token configured")
 	}
 
 	// Get cached definition (schema + current version).
 	schema, currentVersion, err := GetCachedDefinition(api.store.DB(), target.DefinitionID)
 	if err != nil {
-		return TenantConnection{}, fmt.Errorf("failed to load schema: %w", err)
+		return DatabaseConnection{}, fmt.Errorf("failed to load schema: %w", err)
 	}
 
 	client, err := sql.Open("libsql", fmt.Sprintf("libsql://%s-%s.turso.io?authToken=%s", target.DatabaseID, org, target.AuthToken))
 	if err != nil {
-		return TenantConnection{}, err
+		return DatabaseConnection{}, err
 	}
 
 	err = client.Ping()
 	if err != nil {
 		client.Close()
-		return TenantConnection{}, err
+		return DatabaseConnection{}, err
 	}
 
-	return TenantConnection{
+	return DatabaseConnection{
 		Client:          client,
 		Schema:          schema,
 		Token:           target.AuthToken,
@@ -79,14 +79,14 @@ func (api *API) connTurso(principal definitions.Principal, target definitions.Da
 }
 
 // QueryMap executes a query and returns results as a slice of maps.
-func (dao *TenantConnection) QueryMap(ctx context.Context, query string, args ...any) ([]map[string]any, error) {
+func (dao *DatabaseConnection) QueryMap(ctx context.Context, query string, args ...any) ([]map[string]any, error) {
 	rows, err := dao.Client.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	// Build column type lookup from schema template (for tenant databases with typeless columns).
+	// Build column type lookup from schema definition (for databases with typeless columns).
 	// Falls back to DatabaseTypeName() for primary database or unknown columns.
 	schemaTypes := dao.Schema.BuildColumnTypeMap()
 
@@ -96,7 +96,7 @@ func (dao *TenantConnection) QueryMap(ctx context.Context, query string, args ..
 }
 
 // QueryJSON executes a query and returns results as JSON bytes.
-func (dao *TenantConnection) QueryJSON(ctx context.Context, query string, args ...any) ([]byte, error) {
+func (dao *DatabaseConnection) QueryJSON(ctx context.Context, query string, args ...any) ([]byte, error) {
 	m, err := dao.QueryMap(ctx, query, args...)
 	if err != nil {
 		return nil, err

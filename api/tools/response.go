@@ -166,9 +166,9 @@ func BuildAPIError(err error) (int, APIError) {
 			Message: err.Error(),
 			Hint:    "The provided schema is identical to the current version.",
 		}
-	case errors.Is(err, ErrAtomicbaseBusy):
+	case errors.Is(err, ErrAtombaseBusy):
 		return http.StatusConflict, APIError{
-			Code:    CodeAtomicbaseBusy,
+			Code:    CodeAtombaseBusy,
 			Message: err.Error(),
 			Hint:    "Wait for the current migration to complete or check job status.",
 		}

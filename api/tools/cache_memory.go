@@ -7,9 +7,9 @@ import (
 
 // MemoryCache is an in-memory cache optimized for local access.
 // Stores Go values directly (no serialization) for hot path performance.
-// Also implements the byte-based Cache interface for compatibility.
+// Also implements the byte-based Cache interface.
 type MemoryCache struct {
-	bytes  sync.Map // string -> []byte (for Cache interface compatibility)
+	bytes  sync.Map // string -> []byte (for the Cache interface)
 	values sync.Map // string -> any (for direct struct storage, no serialization)
 }
 

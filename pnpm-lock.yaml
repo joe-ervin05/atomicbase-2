@@ -10,7 +10,7 @@ importers:
 
   examples/react-todo:
     dependencies:
-      '@atomicbase/sdk':
+      '@atombase/sdk':
         specifier: workspace:*
         version: link:../../packages/sdk
       '@oslojs/crypto':
@@ -59,10 +59,10 @@ importers:
         specifier: ^3.4.0
         version: 3.4.0
     devDependencies:
-      '@atomicbase/cli':
+      '@atombase/cli':
         specifier: workspace:*
         version: link:../../packages/cli
-      '@atomicbase/definitions':
+      '@atombase/definitions':
         specifier: workspace:*
         version: link:../../packages/definitions
       '@tailwindcss/postcss':
@@ -95,7 +95,7 @@ importers:
 
   packages/cli:
     dependencies:
-      '@atomicbase/definitions':
+      '@atombase/definitions':
         specifier: workspace:*
         version: link:../definitions
       commander:

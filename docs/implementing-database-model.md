@@ -1,9 +1,9 @@
-# Implementing the Unified Tenant Model
+# Historical Unified Database Model Implementation
 
 > [!CAUTION]
-> Historical implementation notes. This document contains older naming and example APIs in places. Use `docs/definition-model.md` and the current code as the source of truth for the active SDK and definition surface.
+> Historical implementation notes. This document contains older naming and example APIs in places. Use `docs/definition-model.md` and the current code as the source of truth for the active SDK and definition surface. Current user-facing flows should follow `Project -> Definition -> Database -> Session/Auth Context -> Query`.
 
-This document describes the implementation pattern for enforcing the unified tenant model's access control at the API layer.
+This document describes the implementation pattern for enforcing definition-driven database access control at the API layer.
 
 ## Overview
 
@@ -186,7 +186,7 @@ func ResolveRequest(db *sql.DB, req *http.Request) (*AuthContext, error) {
 }
 ```
 
-### Global (`Database: global:<definition_name>`)
+### Global (`Database: <database-id>`)
 
 ```go
 func resolveGlobal(db *sql.DB, userID, defName string) (*AuthContext, error) {
@@ -225,7 +225,7 @@ func resolveUser(db *sql.DB, userID, defName string) (*AuthContext, error) {
 }
 ```
 
-### Org (`Database: org:<organization_id>`)
+### Organization (`Database: <organization-database-id>`)
 
 ```go
 func resolveOrg(db *sql.DB, userID, orgID string) (*AuthContext, error) {
@@ -828,7 +828,7 @@ func AuthorizeAndGetPolicy(db *sql.DB, auth *AuthContext, table string, op Opera
 Request:
   POST /data/query/posts
   Authorization: Bearer session-123
-  Database: global:marketplace
+  Database: marketplace
 
 Policy (from atombase_access_policies):
   definition_id=1, version=1, table_name='posts', operation='select'
@@ -868,7 +868,7 @@ Flow:
 Request:
   DELETE /data/query/posts
   Authorization: Bearer session-123
-  Database: org:acme-corp
+  Database: acme-corp-db
   Body: { "where": [{"id": {"eq": 123}}] }
 
 Policy:
@@ -889,7 +889,7 @@ Flow:
 Request:
   PATCH /data/query/posts
   Authorization: Bearer session-123
-  Database: org:acme-corp
+  Database: acme-corp-db
   Body: { "data": {"title": "New Title", "author_id": "user-456"}, "where": [{"id": {"eq": 123}}] }
 
 Policy:
@@ -915,7 +915,7 @@ Flow:
 Request:
   POST /data/query/posts
   Authorization: Bearer session-123
-  Database: org:acme-corp
+  Database: acme-corp-db
   Body: {
     "select": ["id", "title", {"comments": ["id", "text"]}],
     "where": [{"id": {"eq": 123}}]
@@ -959,7 +959,7 @@ Flow:
 Request:
   PATCH /data/query/posts
   Authorization: Bearer session-123
-  Database: org:acme-corp
+  Database: acme-corp-db
   Body: { "data": {"title": "New Title", "status": "draft"}, "where": [{"id": {"eq": 123}}] }
 
 Policy:
@@ -995,7 +995,7 @@ Flow (status = "published"):
 Request:
   DELETE /data/query/posts
   Authorization: Bearer session-123
-  Database: org:acme-corp
+  Database: acme-corp-db
   Body: { "where": [{"id": {"eq": 123}}] }
 
 Policy:

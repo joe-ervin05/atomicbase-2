@@ -1,8 +1,8 @@
 import { createClient, eq, inList, isNull, or } from "./src/index.js";
 
 const baseUrl = "http://localhost:8080";
-const apiKey = process.env.ATOMICBASE_API_KEY;
-const sessionToken = process.env.ATOMICBASE_SESSION_TOKEN;
+const apiKey = process.env.ATOMBASE_API_KEY;
+const sessionToken = process.env.ATOMBASE_SESSION_TOKEN;
 
 const serviceClient = createClient({
   url: baseUrl,
@@ -41,7 +41,7 @@ async function main() {
     definition: "sdk-example",
   });
 
-  const globalDb = serviceClient.database("global:sdk-example-db");
+  const globalDb = serviceClient.database("sdk-example-db");
   await globalDb.from("contacts").insert({
     id: 1,
     email: "alice@example.com",

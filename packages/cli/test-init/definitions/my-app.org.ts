@@ -1,4 +1,4 @@
-import { defineSchema, defineAccess, defineTable, c, allow, defineOrg, defineMembership, eq, or, sql, defineProvision, isNotNull } from "@atomicbase/definitions";
+import { defineSchema, defineAccess, defineTable, c, allow, defineOrg, defineMembership, eq, or, sql, defineProvision, isNotNull } from "@atombase/definitions";
 
 const schema = defineSchema({
   users: defineTable({

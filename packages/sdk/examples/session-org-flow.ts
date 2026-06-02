@@ -1,4 +1,4 @@
-import { createClient, eq } from "@atomicbase/sdk";
+import { createClient, eq } from "@atombase/sdk";
 
 const baseClient = createClient({
   url: "http://localhost:8080",
@@ -53,9 +53,9 @@ async function sessionOrgFlow(email: string, magicLinkToken: string) {
     throw org.error;
   }
 
-  // 7. Query the organization's tenant database explicitly.
+  // 7. Query the organization's backing database explicitly.
   const orgTasks = await client
-    .database(`org:${org.data.id}`)
+    .database(org.data.databaseId)
     .from("tasks")
     .select("id", "title")
     .limit(10);

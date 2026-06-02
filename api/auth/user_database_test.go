@@ -71,7 +71,7 @@ func (s testUserDatabaseStore) LookupDefinitionProvision(ctx context.Context, na
 	}
 }
 
-func (s testUserDatabaseStore) LookupOrganizationTenant(ctx context.Context, organizationID string) (string, string, error) {
+func (s testUserDatabaseStore) LookupOrganizationDatabase(ctx context.Context, organizationID string) (string, string, error) {
 	return "", "", tools.ErrDatabaseNotFound
 }
 

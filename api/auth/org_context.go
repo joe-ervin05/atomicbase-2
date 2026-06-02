@@ -22,7 +22,7 @@ func (api *API) getOrganizationContext(ctx context.Context, actor *orgActor, org
 		return nil, err
 	}
 
-	db, _, err := api.connOrganizationTenant(ctx, actor, organizationID)
+	db, _, err := api.connOrganizationDatabase(ctx, actor, organizationID)
 	if err != nil {
 		return nil, err
 	}

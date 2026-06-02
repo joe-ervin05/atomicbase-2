@@ -1,8 +1,8 @@
-# @atomicbase/sdk
+# @atombase/sdk
 
-TypeScript SDK for the AtomBase API.
+TypeScript SDK for the Atombase API.
 
-The SDK follows the AtomBase noun model:
+The SDK follows the Atombase noun model:
 
 ```text
 Project -> Definition -> Database -> Session/Auth Context -> Query
@@ -11,7 +11,7 @@ Project -> Definition -> Database -> Session/Auth Context -> Query
 ## Install
 
 ```bash
-pnpm add @atomicbase/sdk
+pnpm add @atombase/sdk
 ```
 
 ## Create a client
@@ -19,18 +19,18 @@ pnpm add @atomicbase/sdk
 Service client:
 
 ```ts
-import { createClient } from "@atomicbase/sdk";
+import { createClient } from "@atombase/sdk";
 
 const client = createClient({
   url: "http://localhost:8080",
-  apiKey: process.env.ATOMICBASE_API_KEY,
+  apiKey: process.env.ATOMBASE_API_KEY,
 });
 ```
 
 Session client:
 
 ```ts
-import { createClient } from "@atomicbase/sdk";
+import { createClient } from "@atombase/sdk";
 
 const client = createClient({
   url: "http://localhost:8080",
@@ -44,7 +44,7 @@ Or derive a session-scoped client from a service-scoped base client:
 const sessionClient = client.withSession(sessionToken);
 ```
 
-New code can import `AtomBaseClient`, `AtomBaseError`, and related `AtomBase*` type aliases. Historical `Atomicbase*` exports remain available for compatibility.
+New code should import `AtombaseClient`, `AtombaseError`, and related `Atombase*` type aliases.
 
 For the official browser-app path, persist the session token client-side, restore it on app boot, and clear it on sign-out. The example flow uses `localStorage` for that lifecycle because it is simple and explicit:
 
@@ -77,16 +77,19 @@ const { data, error } = await me
   .single();
 ```
 
-Global database:
+Explicit database:
 
 ```ts
-const publicCatalog = client.database("global:public-catalog-prod");
+const publicCatalog = client.database("public-catalog-prod");
 ```
 
 Organization database:
 
 ```ts
-const orgDb = client.database("org:org_123");
+const org = await client.orgs.get("org_123");
+if (org.error) throw org.error;
+
+const orgDb = client.database(org.data.organization.databaseId);
 ```
 
 ## Project clients
@@ -238,7 +241,7 @@ const org = await client.orgs.create({
 });
 if (org.error) throw org.error;
 
-const orgDb = client.database(`org:${org.data.id}`);
+const orgDb = client.database(org.data.databaseId);
 ```
 
 Invite acceptance flow:
@@ -267,7 +270,7 @@ if (accepted.error) throw accepted.error;
 ## Query helpers
 
 ```ts
-import { createClient, eq, and, isNull, inList } from "@atomicbase/sdk";
+import { createClient, eq, and, isNull, inList } from "@atombase/sdk";
 
 const client = createClient({ url: "http://localhost:8080", sessionToken });
 
@@ -289,8 +292,7 @@ const { data } = await client
 ## Notes
 
 - `client.database()` with no argument targets the current user's database.
-- `client.database("global:<database-id>")` targets a global database.
-- `client.database("org:<organization-id>")` targets an organization database.
+- `client.database("<database-id>")` targets an explicit database.
 - Service-key platform calls use `apiKey`.
 - Session-backed auth and user data calls use `sessionToken`.
 - The browser-first example path stores the session token client-side, restores it on app boot, and clears it on sign-out.

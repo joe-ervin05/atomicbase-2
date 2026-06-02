@@ -41,7 +41,7 @@ func TestValidateEmail(t *testing.T) {
 
 func TestBuildMagicLinkURL_UsesConfigAndEscapesToken(t *testing.T) {
 	orig := config.Cfg.AuthMagicLinkCallbackURL
-	config.Cfg.AuthMagicLinkCallbackURL = " https://app.atomicbase.dev/auth/callback?source=email "
+	config.Cfg.AuthMagicLinkCallbackURL = " https://app.atombase.dev/auth/callback?source=email "
 	t.Cleanup(func() {
 		config.Cfg.AuthMagicLinkCallbackURL = orig
 	})
@@ -50,7 +50,7 @@ func TestBuildMagicLinkURL_UsesConfigAndEscapesToken(t *testing.T) {
 	if err != nil {
 		t.Fatalf("build magic link url: %v", err)
 	}
-	if url != "https://app.atomicbase.dev/auth/callback?source=email&token=a%2Bb%2Fc%3D%3D" {
+	if url != "https://app.atombase.dev/auth/callback?source=email&token=a%2Bb%2Fc%3D%3D" {
 		t.Fatalf("unexpected url: %s", url)
 	}
 }
@@ -161,7 +161,7 @@ func TestBeginMagicLogin_InvalidEmail(t *testing.T) {
 func TestBeginMagicLogin_SendsEmail(t *testing.T) {
 	db := setupAuthTestDB(t)
 	orig := config.Cfg.AuthMagicLinkCallbackURL
-	config.Cfg.AuthMagicLinkCallbackURL = "https://app.atomicbase.dev/auth/callback"
+	config.Cfg.AuthMagicLinkCallbackURL = "https://app.atombase.dev/auth/callback"
 	t.Cleanup(func() {
 		config.Cfg.AuthMagicLinkCallbackURL = orig
 	})
@@ -186,7 +186,7 @@ func TestBeginMagicLogin_SendsEmail(t *testing.T) {
 	if sent.Text == "" {
 		t.Fatalf("expected email body to be set")
 	}
-	if want := "https://app.atomicbase.dev/auth/callback?token="; !strings.Contains(sent.Text, want) {
+	if want := "https://app.atombase.dev/auth/callback?token="; !strings.Contains(sent.Text, want) {
 		t.Fatalf("expected magic link callback url in email body, got %q", sent.Text)
 	}
 
@@ -202,7 +202,7 @@ func TestBeginMagicLogin_SendsEmail(t *testing.T) {
 func TestBeginMagicLogin_RollsBackWhenEmailFails(t *testing.T) {
 	db := setupAuthTestDB(t)
 	orig := config.Cfg.AuthMagicLinkCallbackURL
-	config.Cfg.AuthMagicLinkCallbackURL = "https://app.atomicbase.dev/auth/callback"
+	config.Cfg.AuthMagicLinkCallbackURL = "https://app.atombase.dev/auth/callback"
 	t.Cleanup(func() {
 		config.Cfg.AuthMagicLinkCallbackURL = orig
 	})

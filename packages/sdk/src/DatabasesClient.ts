@@ -1,6 +1,6 @@
-import { AtomicbaseError } from "./AtomicbaseError.js";
+import { AtombaseError } from "./AtombaseError.js";
 import type {
-  AtomicbaseResponse,
+  AtombaseResponse,
   CreateDatabaseOptions,
   Database,
 } from "./types.js";
@@ -36,7 +36,7 @@ export class DatabasesClient {
     return headers;
   }
 
-  async list(): Promise<AtomicbaseResponse<Database[]>> {
+  async list(): Promise<AtombaseResponse<Database[]>> {
     try {
       const response = await this.fetchFn(`${this.baseUrl}/platform/databases`, {
         method: "GET",
@@ -45,18 +45,18 @@ export class DatabasesClient {
 
       if (!response.ok) {
         const errorBody = await response.json().catch(() => ({}));
-        const error = AtomicbaseError.fromResponse(errorBody, response.status);
+        const error = AtombaseError.fromResponse(errorBody, response.status);
         return { data: null, error };
       }
 
       const data = await response.json();
       return { data, error: null };
     } catch (err) {
-      return { data: null, error: AtomicbaseError.networkError(err) };
+      return { data: null, error: AtombaseError.networkError(err) };
     }
   }
 
-  async get(id: string): Promise<AtomicbaseResponse<Database>> {
+  async get(id: string): Promise<AtombaseResponse<Database>> {
     try {
       const response = await this.fetchFn(
         `${this.baseUrl}/platform/databases/${encodeURIComponent(id)}`,
@@ -68,18 +68,18 @@ export class DatabasesClient {
 
       if (!response.ok) {
         const errorBody = await response.json().catch(() => ({}));
-        const error = AtomicbaseError.fromResponse(errorBody, response.status);
+        const error = AtombaseError.fromResponse(errorBody, response.status);
         return { data: null, error };
       }
 
       const data = await response.json();
       return { data, error: null };
     } catch (err) {
-      return { data: null, error: AtomicbaseError.networkError(err) };
+      return { data: null, error: AtombaseError.networkError(err) };
     }
   }
 
-  async create(options: CreateDatabaseOptions): Promise<AtomicbaseResponse<Database>> {
+  async create(options: CreateDatabaseOptions): Promise<AtombaseResponse<Database>> {
     try {
       const response = await this.fetchFn(`${this.baseUrl}/platform/databases`, {
         method: "POST",
@@ -89,18 +89,18 @@ export class DatabasesClient {
 
       if (!response.ok) {
         const errorBody = await response.json().catch(() => ({}));
-        const error = AtomicbaseError.fromResponse(errorBody, response.status);
+        const error = AtombaseError.fromResponse(errorBody, response.status);
         return { data: null, error };
       }
 
       const data = await response.json();
       return { data, error: null };
     } catch (err) {
-      return { data: null, error: AtomicbaseError.networkError(err) };
+      return { data: null, error: AtombaseError.networkError(err) };
     }
   }
 
-  async delete(id: string): Promise<AtomicbaseResponse<void>> {
+  async delete(id: string): Promise<AtombaseResponse<void>> {
     try {
       const response = await this.fetchFn(
         `${this.baseUrl}/platform/databases/${encodeURIComponent(id)}`,
@@ -112,13 +112,13 @@ export class DatabasesClient {
 
       if (!response.ok) {
         const errorBody = await response.json().catch(() => ({}));
-        const error = AtomicbaseError.fromResponse(errorBody, response.status);
+        const error = AtombaseError.fromResponse(errorBody, response.status);
         return { data: null, error };
       }
 
       return { data: undefined as void, error: null };
     } catch (err) {
-      return { data: null, error: AtomicbaseError.networkError(err) };
+      return { data: null, error: AtombaseError.networkError(err) };
     }
   }
 }

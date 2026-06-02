@@ -14,11 +14,11 @@ import (
 // //go:embed openapi.yaml
 // var openapiSpec []byte
 
-// DbHandler is a handler that operates on a tenant connection.
-type DbHandler func(ctx context.Context, db *TenantConnection, req *http.Request) (any, error)
+// DbHandler is a handler that operates on a database connection.
+type DbHandler func(ctx context.Context, db *DatabaseConnection, req *http.Request) (any, error)
 
 // DbResponseHandler is a handler that needs access to the ResponseWriter.
-type DbResponseHandler func(ctx context.Context, db *TenantConnection, req *http.Request, w http.ResponseWriter) (any, error)
+type DbResponseHandler func(ctx context.Context, db *DatabaseConnection, req *http.Request, w http.ResponseWriter) (any, error)
 
 // RegisterRoutes registers all Data API routes on the provided ServeMux.
 // All routes are prefixed with /data.
@@ -32,7 +32,7 @@ func (api *API) RegisterRoutes(app *http.ServeMux) {
 	app.HandleFunc("POST /data/batch", api.handleBatch())
 }
 
-// withDB wraps handlers that operate on external tenant databases.
+// withDB wraps handlers that operate on external databases.
 func (api *API) withDB(handler DbHandler) http.HandlerFunc {
 	return func(wr http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
@@ -102,24 +102,24 @@ func (api *API) withDBResponse(handler DbResponseHandler) http.HandlerFunc {
 	}
 }
 
-// connDb returns an external tenant database connection for the Database header value.
+// connDb returns an external database connection for the Database header value.
 // The internal primary metadata database is never queryable through Data API routes.
 // Returns the connection and a boolean indicating if it should be closed after use.
-func (api *API) connDb(req *http.Request) (TenantConnection, bool, error) {
+func (api *API) connDb(req *http.Request) (DatabaseConnection, bool, error) {
 	principal, err := api.definitions.ResolvePrincipal(req.Context(), tools.GetAuthContext(req.Context()))
 	if err != nil {
-		return TenantConnection{}, false, err
+		return DatabaseConnection{}, false, err
 	}
 
 	dbHeader := req.Header.Get("Database")
 	target, err := api.definitions.ResolveTarget(req.Context(), principal, dbHeader)
 	if err != nil {
-		return TenantConnection{}, false, err
+		return DatabaseConnection{}, false, err
 	}
 
 	db, err := api.connTurso(principal, target)
 	if err != nil {
-		return TenantConnection{}, false, err
+		return DatabaseConnection{}, false, err
 	}
 
 	return db, true, nil
@@ -127,7 +127,7 @@ func (api *API) connDb(req *http.Request) (TenantConnection, bool, error) {
 
 // handleBatch handles POST /data/batch for atomic multi-operation requests.
 func (api *API) handleBatch() http.HandlerFunc {
-	return api.withDB(func(ctx context.Context, dao *TenantConnection, req *http.Request) (any, error) {
+	return api.withDB(func(ctx context.Context, dao *DatabaseConnection, req *http.Request) (any, error) {
 		var batchReq BatchRequest
 		if err := tools.DecodeJSON(req.Body, &batchReq); err != nil {
 			return nil, err
@@ -142,7 +142,7 @@ func (api *API) handleBatch() http.HandlerFunc {
 
 // handleQueryRows handles POST /data/query/{table} for SELECT, INSERT, UPDATE, and DELETE operations.
 func (api *API) handleQueryRows() http.HandlerFunc {
-	return api.withDBResponse(func(ctx context.Context, dao *TenantConnection, req *http.Request, w http.ResponseWriter) (any, error) {
+	return api.withDBResponse(func(ctx context.Context, dao *DatabaseConnection, req *http.Request, w http.ResponseWriter) (any, error) {
 		table := req.PathValue("table")
 
 		operation, onConflict, countExact := parsePreferHeaders(req)
@@ -270,7 +270,7 @@ func handleSwaggerUI() http.HandlerFunc {
 		w.Write([]byte(`<!DOCTYPE html>
 <html>
 <head>
-  <title>Atomicbase API</title>
+  <title>Atombase API</title>
   <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
 </head>
 <body>

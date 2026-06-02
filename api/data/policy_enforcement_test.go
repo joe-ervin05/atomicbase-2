@@ -22,7 +22,7 @@ CREATE TABLE atombase_access_policies (
 );
 `
 
-const tenantPolicySchema = `
+const databasePolicySchema = `
 CREATE TABLE atombase_membership (
 	user_id TEXT NOT NULL PRIMARY KEY,
 	role TEXT NOT NULL,
@@ -40,7 +40,7 @@ CREATE TABLE posts (
 );
 `
 
-func setupPolicyDAO(t *testing.T, principal definitions.Principal) (*TenantConnection, *sql.DB, *sql.DB) {
+func setupPolicyDAO(t *testing.T, principal definitions.Principal) (*DatabaseConnection, *sql.DB, *sql.DB) {
 	t.Helper()
 	primaryDB, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
@@ -54,17 +54,17 @@ func setupPolicyDAO(t *testing.T, principal definitions.Principal) (*TenantConne
 		t.Fatal(err)
 	}
 
-	tenantDB, err := sql.Open("sqlite3", ":memory:")
+	databaseDB, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := tenantDB.Exec(tenantPolicySchema); err != nil {
+	if _, err := databaseDB.Exec(databasePolicySchema); err != nil {
 		t.Fatal(err)
 	}
 
-	dao := &TenantConnection{
-		Client:          tenantDB,
-		Schema:          loadSchema(t, tenantDB),
+	dao := &DatabaseConnection{
+		Client:          databaseDB,
+		Schema:          loadSchema(t, databaseDB),
 		ID:              "org-db",
 		DefinitionID:    1,
 		DefinitionType:  definitions.DefinitionTypeOrganization,
@@ -73,7 +73,7 @@ func setupPolicyDAO(t *testing.T, principal definitions.Principal) (*TenantConne
 		Principal:       principal,
 		primaryStore:    store,
 	}
-	return dao, primaryDB, tenantDB
+	return dao, primaryDB, databaseDB
 }
 
 func insertAccessPolicy(t *testing.T, db *sql.DB, table, operation, jsonCond string) {
@@ -84,23 +84,23 @@ func insertAccessPolicy(t *testing.T, db *sql.DB, table, operation, jsonCond str
 }
 
 func TestSelectJSON_NestedRelationPoliciesUseMembershipAndJoinedTableFilters(t *testing.T) {
-	dao, primaryDB, tenantDB := setupPolicyDAO(t, definitions.Principal{
+	dao, primaryDB, databaseDB := setupPolicyDAO(t, definitions.Principal{
 		UserID:     "user-1",
 		AuthStatus: definitions.AuthStatusAuthenticated,
 	})
 	defer primaryDB.Close()
-	defer tenantDB.Close()
+	defer databaseDB.Close()
 
 	insertAccessPolicy(t, primaryDB, "users", "select", `{"field":"auth.status","op":"eq","value":"member"}`)
 	insertAccessPolicy(t, primaryDB, "posts", "select", `{"field":"old.author_id","op":"eq","value":"auth.id"}`)
 
-	if _, err := tenantDB.Exec(`INSERT INTO atombase_membership (user_id, role) VALUES ('user-1', 'member')`); err != nil {
+	if _, err := databaseDB.Exec(`INSERT INTO atombase_membership (user_id, role) VALUES ('user-1', 'member')`); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := tenantDB.Exec(`INSERT INTO users (id, name) VALUES (1, 'Alice')`); err != nil {
+	if _, err := databaseDB.Exec(`INSERT INTO users (id, name) VALUES (1, 'Alice')`); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := tenantDB.Exec(`INSERT INTO posts (id, user_id, author_id, title) VALUES (1, 1, 'user-1', 'mine'), (2, 1, 'user-2', 'theirs')`); err != nil {
+	if _, err := databaseDB.Exec(`INSERT INTO posts (id, user_id, author_id, title) VALUES (1, 1, 'user-1', 'mine'), (2, 1, 'user-2', 'theirs')`); err != nil {
 		t.Fatal(err)
 	}
 
@@ -132,22 +132,22 @@ func TestSelectJSON_NestedRelationPoliciesUseMembershipAndJoinedTableFilters(t *
 }
 
 func TestUpdateJSON_OrganizationPolicyFiltersRowsInSQL(t *testing.T) {
-	dao, primaryDB, tenantDB := setupPolicyDAO(t, definitions.Principal{
+	dao, primaryDB, databaseDB := setupPolicyDAO(t, definitions.Principal{
 		UserID:     "user-1",
 		AuthStatus: definitions.AuthStatusAuthenticated,
 	})
 	defer primaryDB.Close()
-	defer tenantDB.Close()
+	defer databaseDB.Close()
 
 	insertAccessPolicy(t, primaryDB, "posts", "update", `{"and":[{"field":"auth.status","op":"eq","value":"member"},{"field":"old.author_id","op":"eq","value":"auth.id"}]}`)
 
-	if _, err := tenantDB.Exec(`INSERT INTO atombase_membership (user_id, role) VALUES ('user-1', 'member')`); err != nil {
+	if _, err := databaseDB.Exec(`INSERT INTO atombase_membership (user_id, role) VALUES ('user-1', 'member')`); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := tenantDB.Exec(`INSERT INTO users (id, name) VALUES (1, 'Alice')`); err != nil {
+	if _, err := databaseDB.Exec(`INSERT INTO users (id, name) VALUES (1, 'Alice')`); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := tenantDB.Exec(`INSERT INTO posts (id, user_id, author_id, title) VALUES (1, 1, 'user-2', 'locked'), (2, 1, 'user-1', 'editable')`); err != nil {
+	if _, err := databaseDB.Exec(`INSERT INTO posts (id, user_id, author_id, title) VALUES (1, 1, 'user-2', 'locked'), (2, 1, 'user-1', 'editable')`); err != nil {
 		t.Fatal(err)
 	}
 
@@ -169,10 +169,10 @@ func TestUpdateJSON_OrganizationPolicyFiltersRowsInSQL(t *testing.T) {
 	}
 
 	var lockedTitle, editableTitle string
-	if err := tenantDB.QueryRow(`SELECT title FROM posts WHERE id = 1`).Scan(&lockedTitle); err != nil {
+	if err := databaseDB.QueryRow(`SELECT title FROM posts WHERE id = 1`).Scan(&lockedTitle); err != nil {
 		t.Fatal(err)
 	}
-	if err := tenantDB.QueryRow(`SELECT title FROM posts WHERE id = 2`).Scan(&editableTitle); err != nil {
+	if err := databaseDB.QueryRow(`SELECT title FROM posts WHERE id = 2`).Scan(&editableTitle); err != nil {
 		t.Fatal(err)
 	}
 	if lockedTitle != "locked" || editableTitle != "updated" {
@@ -181,12 +181,12 @@ func TestUpdateJSON_OrganizationPolicyFiltersRowsInSQL(t *testing.T) {
 }
 
 func TestInsertJSON_MultiRowInsertEvaluatesNewPolicyPerRow(t *testing.T) {
-	dao, primaryDB, tenantDB := setupPolicyDAO(t, definitions.Principal{
+	dao, primaryDB, databaseDB := setupPolicyDAO(t, definitions.Principal{
 		UserID:     "user-1",
 		AuthStatus: definitions.AuthStatusAuthenticated,
 	})
 	defer primaryDB.Close()
-	defer tenantDB.Close()
+	defer databaseDB.Close()
 
 	insertAccessPolicy(t, primaryDB, "posts", "insert", `{"field":"new.author_id","op":"eq","value":"auth.id"}`)
 
@@ -201,7 +201,7 @@ func TestInsertJSON_MultiRowInsertEvaluatesNewPolicyPerRow(t *testing.T) {
 	}
 
 	var count int
-	if err := tenantDB.QueryRow(`SELECT COUNT(*) FROM posts`).Scan(&count); err != nil {
+	if err := databaseDB.QueryRow(`SELECT COUNT(*) FROM posts`).Scan(&count); err != nil {
 		t.Fatal(err)
 	}
 	if count != 0 {
@@ -210,17 +210,17 @@ func TestInsertJSON_MultiRowInsertEvaluatesNewPolicyPerRow(t *testing.T) {
 }
 
 func TestUpsertJSON_RequiresUpdatePolicyForConflictingRows(t *testing.T) {
-	dao, primaryDB, tenantDB := setupPolicyDAO(t, definitions.Principal{
+	dao, primaryDB, databaseDB := setupPolicyDAO(t, definitions.Principal{
 		UserID:     "user-1",
 		AuthStatus: definitions.AuthStatusAuthenticated,
 	})
 	defer primaryDB.Close()
-	defer tenantDB.Close()
+	defer databaseDB.Close()
 
 	insertAccessPolicy(t, primaryDB, "posts", "insert", `{"field":"new.author_id","op":"eq","value":"auth.id"}`)
 	insertAccessPolicy(t, primaryDB, "posts", "update", `{"field":"old.author_id","op":"eq","value":"auth.id"}`)
 
-	if _, err := tenantDB.Exec(`INSERT INTO posts (id, user_id, author_id, title) VALUES (1, 1, 'user-2', 'locked')`); err != nil {
+	if _, err := databaseDB.Exec(`INSERT INTO posts (id, user_id, author_id, title) VALUES (1, 1, 'user-2', 'locked')`); err != nil {
 		t.Fatal(err)
 	}
 
@@ -237,7 +237,7 @@ func TestUpsertJSON_RequiresUpdatePolicyForConflictingRows(t *testing.T) {
 	}
 
 	var title, authorID string
-	if err := tenantDB.QueryRow(`SELECT title, author_id FROM posts WHERE id = 1`).Scan(&title, &authorID); err != nil {
+	if err := databaseDB.QueryRow(`SELECT title, author_id FROM posts WHERE id = 1`).Scan(&title, &authorID); err != nil {
 		t.Fatal(err)
 	}
 	if title != "locked" || authorID != "user-2" {
@@ -266,12 +266,12 @@ func TestUpsertJSON_RequiresUpdatePolicyForConflictingRows(t *testing.T) {
 }
 
 func TestUpsertJSON_RejectsDuplicateRequestKeysBeforePolicyBypass(t *testing.T) {
-	dao, primaryDB, tenantDB := setupPolicyDAO(t, definitions.Principal{
+	dao, primaryDB, databaseDB := setupPolicyDAO(t, definitions.Principal{
 		UserID:     "user-1",
 		AuthStatus: definitions.AuthStatusAuthenticated,
 	})
 	defer primaryDB.Close()
-	defer tenantDB.Close()
+	defer databaseDB.Close()
 
 	insertAccessPolicy(t, primaryDB, "posts", "insert", `{"field":"new.author_id","op":"eq","value":"auth.id"}`)
 	insertAccessPolicy(t, primaryDB, "posts", "update", `{"field":"old.author_id","op":"eq","value":"never"}`)
@@ -287,7 +287,7 @@ func TestUpsertJSON_RejectsDuplicateRequestKeysBeforePolicyBypass(t *testing.T) 
 	}
 
 	var count int
-	if err := tenantDB.QueryRow(`SELECT COUNT(*) FROM posts`).Scan(&count); err != nil {
+	if err := databaseDB.QueryRow(`SELECT COUNT(*) FROM posts`).Scan(&count); err != nil {
 		t.Fatal(err)
 	}
 	if count != 0 {

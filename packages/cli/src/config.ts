@@ -2,14 +2,14 @@ import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { createJiti } from "jiti";
 
-export interface AtomicbaseConfig {
+export interface AtombaseConfig {
   url?: string;
   apiKey?: string;
   schemas: string;
   insecure?: boolean;
 }
 
-const DEFAULT_CONFIG: Required<AtomicbaseConfig> = {
+const DEFAULT_CONFIG: Required<AtombaseConfig> = {
   url: "http://localhost:8080",
   apiKey: "",
   schemas: "./definitions",
@@ -17,9 +17,9 @@ const DEFAULT_CONFIG: Required<AtomicbaseConfig> = {
 };
 
 const CONFIG_FILES = [
-  "atomicbase.config.ts",
-  "atomicbase.config.js",
-  "atomicbase.config.mjs",
+  "atombase.config.ts",
+  "atombase.config.js",
+  "atombase.config.mjs",
 ];
 
 // Create jiti instance for loading TypeScript config files
@@ -33,8 +33,8 @@ const workingDir = process.env.INIT_CWD || process.cwd();
  * Load configuration from file and environment variables.
  * Priority: env vars > config file > defaults
  */
-export async function loadConfig(): Promise<Required<AtomicbaseConfig>> {
-  let fileConfig: Partial<AtomicbaseConfig> = {};
+export async function loadConfig(): Promise<Required<AtombaseConfig>> {
+  let fileConfig: Partial<AtombaseConfig> = {};
 
   // Try to load config file using jiti (handles TypeScript natively)
   for (const filename of CONFIG_FILES) {
@@ -42,7 +42,7 @@ export async function loadConfig(): Promise<Required<AtomicbaseConfig>> {
     if (existsSync(configPath)) {
       try {
         const module = await jiti.import(configPath);
-        fileConfig = (module as { default?: AtomicbaseConfig }).default ?? module as AtomicbaseConfig;
+        fileConfig = (module as { default?: AtombaseConfig }).default ?? module as AtombaseConfig;
         break;
       } catch (err) {
         console.error(`Error loading ${filename}:`, err);
@@ -51,14 +51,14 @@ export async function loadConfig(): Promise<Required<AtomicbaseConfig>> {
   }
 
   // Merge: defaults < file config < env vars
-  const insecureEnv = process.env.ATOMICBASE_INSECURE;
+  const insecureEnv = process.env.ATOMBASE_INSECURE;
   const insecure = insecureEnv !== undefined
     ? insecureEnv === "1" || insecureEnv.toLowerCase() === "true"
     : fileConfig.insecure ?? DEFAULT_CONFIG.insecure;
 
   return {
-    url: process.env.ATOMICBASE_URL ?? fileConfig.url ?? DEFAULT_CONFIG.url,
-    apiKey: process.env.ATOMICBASE_API_KEY ?? fileConfig.apiKey ?? DEFAULT_CONFIG.apiKey,
+    url: process.env.ATOMBASE_URL ?? fileConfig.url ?? DEFAULT_CONFIG.url,
+    apiKey: process.env.ATOMBASE_API_KEY ?? fileConfig.apiKey ?? DEFAULT_CONFIG.apiKey,
     schemas: fileConfig.schemas ?? DEFAULT_CONFIG.schemas,
     insecure,
   };
@@ -66,9 +66,9 @@ export async function loadConfig(): Promise<Required<AtomicbaseConfig>> {
 
 /**
  * Helper to define config with type checking.
- * Used in atomicbase.config.ts files.
+ * Used in atombase.config.ts files.
  */
-export function defineConfig(config: Partial<AtomicbaseConfig>): AtomicbaseConfig {
+export function defineConfig(config: Partial<AtombaseConfig>): AtombaseConfig {
   return {
     ...DEFAULT_CONFIG,
     ...config,

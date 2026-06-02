@@ -1,8 +1,8 @@
-# AtomBase SDK Design
+# Atombase SDK Design
 
 ## Current model
 
-The SDK mirrors the current AtomBase noun model:
+The SDK mirrors the current Atombase noun model:
 
 ```text
 Project -> Definition -> Database -> Session/Auth Context -> Query
@@ -46,10 +46,8 @@ The data API has three routing modes:
 
 - `client.database()`
   no `Database` header, resolves to the current authenticated user's database
-- `client.database("global:<database-id>")`
-  explicit global database routing
-- `client.database("org:<organization-id>")`
-  explicit organization database routing
+- `client.database("<database-id>")`
+  explicit concrete database routing
 
 There is no longer a `user:<definition-name>` routing mode.
 
@@ -63,7 +61,7 @@ There is no longer a `user:<definition-name>` routing mode.
 - `push(name, payload)`
 - `history(name)`
 
-Definitions are now definition-first, not template-first. The SDK types include:
+The SDK definition types include:
 
 - `Definition`
 - `DefinitionVersion`
@@ -141,4 +139,4 @@ Supported filter helpers:
 - Session vs service auth should be explicit and composable.
 - The default data client should support the user-self path cleanly.
 - Organization management belongs under session/auth context, not the project platform surface.
-- Definitions, not templates, are the canonical project abstraction.
+- Definitions are the canonical project abstraction.

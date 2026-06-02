@@ -1,4 +1,4 @@
-import { AtomicbaseBuilder, type BuilderConfig } from "./AtomicbaseBuilder.js";
+import { AtombaseBuilder, type BuilderConfig } from "./AtombaseBuilder.js";
 import type { SelectColumn, JoinClause, FilterCondition } from "./types.js";
 
 /**
@@ -28,7 +28,7 @@ import type { SelectColumn, JoinClause, FilterCondition } from "./types.js";
  *   .eq('id', 1)
  * ```
  */
-export class AtomicbaseQueryBuilder<T = Record<string, unknown>> extends AtomicbaseBuilder<T> {
+export class AtombaseQueryBuilder<T = Record<string, unknown>> extends AtombaseBuilder<T> {
   constructor(config: BuilderConfig) {
     super(config);
   }
@@ -52,10 +52,10 @@ export class AtomicbaseQueryBuilder<T = Record<string, unknown>> extends Atomicb
    * const { data } = await client.from('users').select('id', 'name', { posts: ['title', 'body'] })
    * ```
    */
-  select(...columns: SelectColumn[]): AtomicbaseQueryBuilder<T[]> {
+  select(...columns: SelectColumn[]): AtombaseQueryBuilder<T[]> {
     this.state.operation = "select";
     this.state.select = columns.length > 0 ? columns : ["*"];
-    return this as unknown as AtomicbaseQueryBuilder<T[]>;
+    return this as unknown as AtombaseQueryBuilder<T[]>;
   }
 
   /**
@@ -129,10 +129,10 @@ export class AtomicbaseQueryBuilder<T = Record<string, unknown>> extends Atomicb
    *   .returning('id', 'created_at')
    * ```
    */
-  insert(data: Partial<T> | Partial<T>[]): AtomicbaseQueryBuilder<{ last_insert_id: number }> {
+  insert(data: Partial<T> | Partial<T>[]): AtombaseQueryBuilder<{ last_insert_id: number }> {
     this.state.operation = "insert";
     this.state.data = Array.isArray(data) ? data : [data];
-    return this as unknown as AtomicbaseQueryBuilder<{ last_insert_id: number }>;
+    return this as unknown as AtombaseQueryBuilder<{ last_insert_id: number }>;
   }
 
   /**
@@ -146,10 +146,10 @@ export class AtomicbaseQueryBuilder<T = Record<string, unknown>> extends Atomicb
    *   .upsert({ id: 1, name: 'Alice Updated' })
    * ```
    */
-  upsert(data: Partial<T> | Partial<T>[]): AtomicbaseQueryBuilder<{ rows_affected: number }> {
+  upsert(data: Partial<T> | Partial<T>[]): AtombaseQueryBuilder<{ rows_affected: number }> {
     this.state.operation = "upsert";
     this.state.data = Array.isArray(data) ? data : [data];
-    return this as unknown as AtomicbaseQueryBuilder<{ rows_affected: number }>;
+    return this as unknown as AtombaseQueryBuilder<{ rows_affected: number }>;
   }
 
   /**
@@ -164,10 +164,10 @@ export class AtomicbaseQueryBuilder<T = Record<string, unknown>> extends Atomicb
    *   .eq('id', 1)
    * ```
    */
-  update(data: Partial<T>): AtomicbaseQueryBuilder<{ rows_affected: number }> {
+  update(data: Partial<T>): AtombaseQueryBuilder<{ rows_affected: number }> {
     this.state.operation = "update";
     this.state.data = data;
-    return this as unknown as AtomicbaseQueryBuilder<{ rows_affected: number }>;
+    return this as unknown as AtombaseQueryBuilder<{ rows_affected: number }>;
   }
 
   /**
@@ -182,9 +182,9 @@ export class AtomicbaseQueryBuilder<T = Record<string, unknown>> extends Atomicb
    *   .eq('status', 'deleted')
    * ```
    */
-  delete(): AtomicbaseQueryBuilder<{ rows_affected: number }> {
+  delete(): AtombaseQueryBuilder<{ rows_affected: number }> {
     this.state.operation = "delete";
-    return this as unknown as AtomicbaseQueryBuilder<{ rows_affected: number }>;
+    return this as unknown as AtombaseQueryBuilder<{ rows_affected: number }>;
   }
 
   /**

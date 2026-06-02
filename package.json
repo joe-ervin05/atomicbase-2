@@ -1,14 +1,14 @@
 {
-  "name": "atomicbase",
+  "name": "atombase",
   "private": true,
   "scripts": {
     "build": "pnpm -r build",
-    "test:contract:sdk": "pnpm --filter @atomicbase/sdk test:contract",
-    "build:sdk": "pnpm --filter @atomicbase/sdk build",
-    "build:definitions": "pnpm --filter @atomicbase/definitions build",
-    "build:cli": "pnpm --filter @atomicbase/cli build",
-    "build:react-todo": "pnpm --filter @atomicbase/sdk build && pnpm --filter @atomicbase/definitions build && pnpm --filter react-todo build",
-    "dev:sdk": "pnpm --filter @atomicbase/sdk dev",
+    "test:contract:sdk": "pnpm --filter @atombase/sdk test:contract",
+    "build:sdk": "pnpm --filter @atombase/sdk build",
+    "build:definitions": "pnpm --filter @atombase/definitions build",
+    "build:cli": "pnpm --filter @atombase/cli build",
+    "build:react-todo": "pnpm --filter @atombase/sdk build && pnpm --filter @atombase/definitions build && pnpm --filter react-todo build",
+    "dev:sdk": "pnpm --filter @atombase/sdk dev",
     "dev:react-todo": "pnpm --filter react-todo dev"
   }
 }

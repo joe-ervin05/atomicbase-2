@@ -8,7 +8,7 @@ import {
   defineTable,
   eq,
   sql,
-} from "@atomicbase/definitions";
+} from "@atombase/definitions";
 
 const schema = defineSchema({
   todos: defineTable({

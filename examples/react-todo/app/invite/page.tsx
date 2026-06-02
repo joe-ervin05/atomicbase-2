@@ -14,7 +14,7 @@ import {
   getStoredSessionToken,
   setStoredActiveOrg,
   setStoredPendingInvite,
-} from "@/lib/atomicbase";
+} from "@/lib/atombase";
 
 type InviteState =
   | { kind: "booting" }
@@ -36,23 +36,6 @@ function InvitePageContent() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [state, setState] = useState<InviteState>({ kind: "booting" });
-
-  useEffect(() => {
-    const orgId = searchParams.get("org");
-    const inviteId = searchParams.get("invite");
-    if (orgId && inviteId) {
-      setStoredPendingInvite({ orgId, inviteId });
-      void resolveInvite(orgId, inviteId);
-      return;
-    }
-
-    const stored = getStoredPendingInvite();
-    if (!stored) {
-      setState({ kind: "error", message: "Invite link is missing organization details." });
-      return;
-    }
-    void resolveInvite(stored.orgId, stored.inviteId);
-  }, [searchParams]);
 
   async function resolveInvite(orgId: string, inviteId: string) {
     const token = getStoredSessionToken();
@@ -81,6 +64,29 @@ function InvitePageContent() {
     setState({ kind: "accepted", message: "Invite accepted. Redirecting to your workspace..." });
     router.replace("/");
   }
+
+  useEffect(() => {
+    const orgId = searchParams.get("org");
+    const inviteId = searchParams.get("invite");
+    if (orgId && inviteId) {
+      setStoredPendingInvite({ orgId, inviteId });
+      queueMicrotask(() => {
+        void resolveInvite(orgId, inviteId);
+      });
+      return;
+    }
+
+    const stored = getStoredPendingInvite();
+    if (!stored) {
+      queueMicrotask(() => {
+        setState({ kind: "error", message: "Invite link is missing organization details." });
+      });
+      return;
+    }
+    queueMicrotask(() => {
+      void resolveInvite(stored.orgId, stored.inviteId);
+    });
+  }, [searchParams]);
 
   async function handleMagicLinkStart(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();

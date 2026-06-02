@@ -1,7 +1,7 @@
-import { AtomicbaseError } from "./AtomicbaseError.js";
+import { AtombaseError } from "./AtombaseError.js";
 import type {
-  AtomicbaseResponse,
-  AtomicbaseResponseWithCount,
+  AtombaseResponse,
+  AtombaseResponseWithCount,
   FilterCondition,
   OrderDirection,
   ResultMode,
@@ -46,7 +46,7 @@ export interface BuilderConfig {
  * Base builder class that handles query construction, filtering, transforms, and execution.
  * Implements PromiseLike for lazy execution - queries only run when awaited.
  */
-export abstract class AtomicbaseBuilder<T> implements PromiseLike<AtomicbaseResponse<T>> {
+export abstract class AtombaseBuilder<T> implements PromiseLike<AtombaseResponse<T>> {
   protected state: QueryState;
   protected readonly baseUrl: string;
   protected readonly apiKey?: string;
@@ -144,42 +144,42 @@ export abstract class AtomicbaseBuilder<T> implements PromiseLike<AtomicbaseResp
   /**
    * Return a single row. Errors if zero or multiple rows returned.
    */
-  single<Result = T extends (infer U)[] ? U : T>(): AtomicbaseBuilder<Result> {
+  single<Result = T extends (infer U)[] ? U : T>(): AtombaseBuilder<Result> {
     this.state.resultMode = "single";
     if (this.state.limit === null) {
       this.state.limit = 2; // Fetch 2 to detect multiple rows
     }
-    return this as unknown as AtomicbaseBuilder<Result>;
+    return this as unknown as AtombaseBuilder<Result>;
   }
 
   /**
    * Return zero or one row. Returns null if no rows found.
    */
-  maybeSingle<Result = T extends (infer U)[] ? U | null : T | null>(): AtomicbaseBuilder<Result> {
+  maybeSingle<Result = T extends (infer U)[] ? U | null : T | null>(): AtombaseBuilder<Result> {
     this.state.resultMode = "maybeSingle";
     if (this.state.limit === null) {
       this.state.limit = 1;
     }
-    return this as unknown as AtomicbaseBuilder<Result>;
+    return this as unknown as AtombaseBuilder<Result>;
   }
 
   /**
    * Return only the count of matching rows.
    */
-  count(): AtomicbaseBuilder<number> {
+  count(): AtombaseBuilder<number> {
     this.state.resultMode = "count";
     this.state.count = true;
     this.state.limit = 0;
-    return this as unknown as AtomicbaseBuilder<number>;
+    return this as unknown as AtombaseBuilder<number>;
   }
 
   /**
    * Return both data and total count.
    */
-  withCount(): AtomicbaseBuilder<T> & PromiseLike<AtomicbaseResponseWithCount<T>> {
+  withCount(): AtombaseBuilder<T> & PromiseLike<AtombaseResponseWithCount<T>> {
     this.state.resultMode = "withCount";
     this.state.count = true;
-    return this as unknown as AtomicbaseBuilder<T> & PromiseLike<AtomicbaseResponseWithCount<T>>;
+    return this as unknown as AtombaseBuilder<T> & PromiseLike<AtombaseResponseWithCount<T>>;
   }
 
   // ===========================================================================
@@ -244,8 +244,8 @@ export abstract class AtomicbaseBuilder<T> implements PromiseLike<AtomicbaseResp
   // Promise Implementation (Lazy Execution)
   // ===========================================================================
 
-  then<TResult1 = AtomicbaseResponse<T>, TResult2 = never>(
-    onfulfilled?: ((value: AtomicbaseResponse<T>) => TResult1 | PromiseLike<TResult1>) | null,
+  then<TResult1 = AtombaseResponse<T>, TResult2 = never>(
+    onfulfilled?: ((value: AtombaseResponse<T>) => TResult1 | PromiseLike<TResult1>) | null,
     onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
   ): Promise<TResult1 | TResult2> {
     return this.executeWithResultMode().then(onfulfilled, onrejected);
@@ -255,7 +255,7 @@ export abstract class AtomicbaseBuilder<T> implements PromiseLike<AtomicbaseResp
   // Internal: Execution
   // ===========================================================================
 
-  private async executeWithResultMode(): Promise<AtomicbaseResponse<T>> {
+  private async executeWithResultMode(): Promise<AtombaseResponse<T>> {
     const { resultMode } = this.state;
     const needsCount = resultMode === "count" || resultMode === "withCount";
 
@@ -272,12 +272,12 @@ export abstract class AtomicbaseBuilder<T> implements PromiseLike<AtomicbaseResp
         return { data: (result.count ?? 0) as T, error: null };
 
       case "withCount":
-        return result as unknown as AtomicbaseResponse<T>;
+        return result as unknown as AtombaseResponse<T>;
 
       case "single": {
         const data = result.data as unknown[];
         if (!data || data.length === 0) {
-          const error = new AtomicbaseError({
+          const error = new AtombaseError({
             message: "No rows returned",
             code: "NOT_FOUND",
             status: 404,
@@ -287,7 +287,7 @@ export abstract class AtomicbaseBuilder<T> implements PromiseLike<AtomicbaseResp
           return { data: null, error };
         }
         if (data.length > 1) {
-          const error = new AtomicbaseError({
+          const error = new AtombaseError({
             message: "Multiple rows returned",
             code: "MULTIPLE_ROWS",
             status: 400,
@@ -312,7 +312,7 @@ export abstract class AtomicbaseBuilder<T> implements PromiseLike<AtomicbaseResp
   /**
    * Execute the request. Unified method for both regular and count queries.
    */
-  private async execute(withCount: boolean): Promise<AtomicbaseResponseWithCount<T>> {
+  private async execute(withCount: boolean): Promise<AtombaseResponseWithCount<T>> {
     const { url, headers, body } = this.buildRequest();
 
     try {
@@ -325,7 +325,7 @@ export abstract class AtomicbaseBuilder<T> implements PromiseLike<AtomicbaseResp
 
       if (!response.ok) {
         const errorBody = await response.json().catch(() => ({}));
-        const error = AtomicbaseError.fromResponse(errorBody, response.status);
+        const error = AtombaseError.fromResponse(errorBody, response.status);
         if (this.shouldThrowOnError) throw error;
         return { data: null, count: null, error };
       }
@@ -339,10 +339,10 @@ export abstract class AtomicbaseBuilder<T> implements PromiseLike<AtomicbaseResp
 
       return { data, count, error: null };
     } catch (err) {
-      if (err instanceof AtomicbaseError) throw err;
+      if (err instanceof AtombaseError) throw err;
 
       if (err instanceof DOMException && err.name === "AbortError") {
-        const error = new AtomicbaseError({
+        const error = new AtombaseError({
           message: "Request was aborted",
           code: "ABORTED",
           status: 0,
@@ -352,7 +352,7 @@ export abstract class AtomicbaseBuilder<T> implements PromiseLike<AtomicbaseResp
         return { data: null, count: null, error };
       }
 
-      const error = AtomicbaseError.networkError(err);
+      const error = AtombaseError.networkError(err);
       if (this.shouldThrowOnError) throw error;
       return { data: null, count: null, error };
     }

@@ -89,6 +89,6 @@ const (
 	MaxBatchOperations = 100 // Max operations in a batch request
 )
 
-// InternalTablePrefix is the prefix for internal atomicbase tables.
+// InternalTablePrefix is the prefix for internal atombase tables.
 // Tables with this prefix are excluded from user queries and schema sync operations.
 const InternalTablePrefix = "atombase_"

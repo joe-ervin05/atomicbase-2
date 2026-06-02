@@ -1,11 +1,11 @@
-# Unified Tenant Model Architecture
+# Historical Unified Database Model Architecture
 
 > [!CAUTION]
-> Historical design document. Some SDK examples and package names in this file predate the current definitions-first surface. Treat it as architecture background, not as the primary implementation guide.
+> Historical design document. Some package names in this file predate the current definitions-first surface. Treat it as architecture background, not as the primary implementation guide. Current user-facing flows should follow `Project -> Definition -> Database -> Session/Auth Context -> Query`.
 
 ## Summary
 
-Replace the current Template/Database model with a unified Definition/Database model where `definition_type` determines ownership and access patterns.
+Use a Definition/Database model where `definition_type` determines ownership and access patterns.
 
 ## Core Concepts
 
@@ -38,7 +38,7 @@ The `definition_type` determines how ownership and access work for databases cre
 
 - Multi-database: one definition → many databases
 - Full access control: session context + membership roles + row context
-- Supports membership with roles via tenant-local `atombase_membership`
+- Supports membership with roles via database-local `atombase_membership`
 - `owner_id` is the billing/account owner (separate from RBAC roles)
 
 **User** (`definition_type = 'user'`):
@@ -54,7 +54,7 @@ For organization databases, there are two distinct concepts:
 | Concept | Source | Purpose |
 |---------|--------|---------|
 | `owner_id` | `atombase_databases.owner_id` | Billing/account owner. Can transfer ownership. Cannot be removed. |
-| `owner` role | `tenant.atombase_membership.role` | RBAC permission level. Multiple users can have this role. |
+| `owner` role | database-local `atombase_membership.role` | RBAC permission level. Multiple users can have this role. |
 
 The `owner_id` user typically also has a membership row with `role = 'owner'`, but they're separate:
 
@@ -64,7 +64,7 @@ The `owner_id` user typically also has a membership row with `role = 'owner'`, b
 This separation allows:
 - Transferring billing ownership without changing RBAC
 - Multiple users with owner-level permissions
-- A fallback if tenant membership rows are accidentally deleted
+- A fallback if database membership rows are accidentally deleted
 
 ### Shared Infrastructure
 - Schema engine identical for all types (tables, columns, indexes, FTS)
@@ -279,8 +279,8 @@ await client.global("marketplace").from("extensions").select()
 
 **Headers sent:**
 - User: `Database: user:notes` (definition name from user's database)
-- Org: `Database: org:acme-corp`
-- Global: `Database: global:marketplace`
+- Organization database: `Database: acme-corp-db`
+- Global database: `Database: marketplace`
 
 ### Membership Management
 
@@ -341,7 +341,7 @@ Instead, `client.org("acme-corp")` returns a lightweight handle, not a fetched o
 
 ```
 POST /data/query/people
-Database: org:acme-corp
+Database: acme-corp-db
 Authorization: Bearer <session>
 ```
 
@@ -380,7 +380,7 @@ definitions/
 
 **Organization database** (`definitions/+customer.org.ts`):
 ```typescript
-import { defineOrg, defineMembership, defineSchema, defineAccess, defineTable, definePolicy, c, r, eq, inList } from "@atomicbase/definitions";
+import { defineOrg, defineMembership, defineSchema, defineAccess, defineTable, definePolicy, c, r, eq, inList } from "@atombase/definitions";
 
 export default defineOrg({
   maxMembers: 50,
@@ -421,7 +421,7 @@ export default defineOrg({
 
 **User definition** (`definitions/+notes.user.ts`):
 ```typescript
-import { defineUser, defineSchema, defineAccess, defineTable, definePolicy, c, r } from "@atomicbase/definitions";
+import { defineUser, defineSchema, defineAccess, defineTable, definePolicy, c, r } from "@atombase/definitions";
 
 export default defineUser({
   schema: defineSchema({
@@ -444,7 +444,7 @@ export default defineUser({
 
 **Global definition** (`definitions/+marketplace.global.ts`):
 ```typescript
-import { defineGlobal, defineSchema, defineAccess, defineTable, definePolicy, c, r, eq } from "@atomicbase/definitions";
+import { defineGlobal, defineSchema, defineAccess, defineTable, definePolicy, c, r, eq } from "@atombase/definitions";
 
 export default defineGlobal({
   schema: defineSchema({
@@ -467,18 +467,18 @@ export default defineGlobal({
 
 ## Platform Tables
 
-See `api/unified_tenant_schema.sql` for the full schema. Key tables:
+See `api/unified_database_schema.sql` for the full schema. Key tables:
 
 **Identity & Auth:**
 - `atombase_definitions` — schema blueprints with `definition_type` (global/organization/user)
 - `atombase_databases` — pure storage, linked to definitions
 - `atombase_users` — user accounts with optional `database_id`
 - `atombase_organizations` — identity layer on databases
-- tenant-local invitation tables in the organization database — pending org invites
+- database-local invitation tables in the organization database — pending org invites
 - `atombase_sessions` — session tokens
 
-**Tenant-local auth state (organization databases):**
-- `atombase_membership` — org membership with role (stored in each org tenant database)
+**Database-local auth state (organization databases):**
+- `atombase_membership` — org membership with role (stored in each organization database)
 
 **Schema & Versioning:**
 - `atombase_definitions_history` — schema snapshots per version
@@ -585,7 +585,7 @@ System operations (background jobs, migrations, admin) skip policy enforcement e
 - No SQL expressions in data payloads
 - Use schema defaults or client-side values for computed fields
 
-See `implementing-tenant-model.md` for full implementation details.
+See `implementing-database-model.md` for full implementation details.
 
 ## Session Validation
 
@@ -602,13 +602,13 @@ const (
 )
 ```
 
-See `implementing-tenant-model.md` for full implementation.
+See `implementing-database-model.md` for full implementation.
 
 ## Database Resolution Queries
 
-After session validation, resolve target database access based on `Database` header. Primary DB resolution only determines routing (`database_id`, `definition_id`, `definition_version`) and user identity (`auth.id`). Organization role resolution happens in the tenant database during query planning/execution.
+After session validation, resolve target database access based on the `Database` header. Primary DB resolution only determines routing (`database_id`, `definition_id`, `definition_version`) and user identity (`auth.id`). Organization role resolution happens in the target database during query planning/execution.
 
-**Global** (`Database: global:<definition_name>`)
+**Global** (`Database: <database-id>`)
 ```sql
 SELECT d.id, d.definition_id, d.definition_version
 FROM atombase_definitions def
@@ -616,7 +616,7 @@ JOIN atombase_databases d ON d.definition_id = def.id
 WHERE def.name = ? AND def.definition_type = 'global'
 ```
 
-**User** (`Database: user:<definition_name>`)
+**User** (omit `Database` for the signed-in user's own database)
 ```sql
 SELECT d.id, d.definition_id, d.definition_version
 FROM atombase_users u
@@ -625,7 +625,7 @@ JOIN atombase_definitions def ON def.id = d.definition_id
 WHERE u.id = ? AND def.name = ? AND def.definition_type = 'user'
 ```
 
-**Org** (`Database: org:<organization_id>`)
+**Organization** (`Database: <organization-database-id>`)
 ```sql
 SELECT d.id, d.definition_id, d.definition_version
 FROM atombase_organizations o
@@ -633,7 +633,7 @@ JOIN atombase_databases d ON d.id = o.database_id
 WHERE o.id = ?
 ```
 
-**Tenant-side role lookup (organization databases)**
+**Database-side role lookup (organization databases)**
 ```sql
 SELECT role
 FROM atombase_membership
@@ -643,7 +643,7 @@ WHERE user_id = ?
 The runtime planner combines:
 1. `auth.id` from session validation (primary)
 2. Cached access policy from primary (`definition_id`, `version`)
-3. Tenant-local org role from `atombase_membership`
+3. Database-local org role from `atombase_membership`
 
 ## Policy Caching
 
@@ -673,7 +673,7 @@ Each table gets its own RLS conditions injected. If any table has no policy row,
 
 Roles are validated at write time, not query time:
 
-- **Membership insert/update** — Check role exists in definition `roles_json` before writing tenant membership
+- **Membership insert/update** — Check role exists in definition `roles_json` before writing database membership
 - **Invalid role** — Reject with 400 error before writing to database
 - **Query time** — No validation needed (data already clean)
 
@@ -718,19 +718,18 @@ Roles are validated at write time, not query time:
 
 ```
 Authorization: Bearer <session_token>   # User session
-Database: <type>:<name>                 # Target database
+Database: <database-id>                 # Target database
 ```
 
 **Database header format:**
-- `global:<definition_name>` — Global database (e.g., `global:marketplace`)
-- `user:<definition_name>` — User's personal database (e.g., `user:notes`)
-- `org:<organization_id>` — Organization database (e.g., `org:acme-corp`)
+- `<database-id>` — explicit database
+- omit the header for the signed-in user's own database
 
 ## Implementation Phases
 
 ### Phase 1: TypeScript packages
-1. Create `@atomicbase/definitions` package with condition primitives
-2. Add `defineOrg()`, `defineUser()`, and `defineGlobal()` to `@atomicbase/definitions`
+1. Create `@atombase/definitions` package with condition primitives
+2. Add `defineOrg()`, `defineUser()`, and `defineGlobal()` to `@atombase/definitions`
 3. Update CLI parser for `.org.ts`, `.user.ts`, and `.global.ts` file detection
 
 ### Phase 2: Go API - Platform Tables
@@ -742,7 +741,7 @@ Database: <type>:<name>                 # Target database
 
 ### Phase 3: Go API - Database Management
 1. Create `api/platform/databases.go` - database CRUD
-2. Create `api/platform/membership.go` - manage org membership rows in tenant databases
+2. Create `api/platform/membership.go` - manage org membership rows in organization databases
 
 ### Phase 4: Schema Versioning
 1. Implement `atombase_definitions_history` population on push
@@ -752,13 +751,8 @@ Database: <type>:<name>                 # Target database
 
 ### Phase 5: Auth Context
 1. Update `api/tools/auth.go` with session-based auth context
-2. Resolve org role from tenant `atombase_membership` using `auth.id`
-3. Inject access conditions into queries from cached primary policies + tenant role context
-
-### Phase 6: Migration path
-1. CLI commands to migrate existing templates to definitions
-2. Deprecation warnings for `.schema.ts` files
-3. Keep existing `/platform/templates/*` endpoints working temporarily
+2. Resolve org role from database-local `atombase_membership` using `auth.id`
+3. Inject access conditions into queries from cached primary policies + database role context
 
 ## Critical Files to Modify
 
@@ -771,13 +765,12 @@ Database: <type>:<name>                 # Target database
 **TypeScript:**
 - `packages/definitions/src/index.ts` - New unified package (defineOrg, defineUser, defineGlobal, defineManagement, defineSchema, defineTable, defineAccess, definePolicy)
 - `packages/cli/src/schema/parser.ts` - File type detection (.org.ts, .user.ts, .global.ts)
-- `packages/cli/src/commands/templates.ts` - Route to correct API based on type
 
 **New files:**
-- `packages/definitions/` - New package replacing template + access
+- `packages/definitions/` - Definition authoring package
 - `api/platform/definitions.go` - Unified definition CRUD
 - `api/platform/databases.go` - Database management
-- `api/platform/membership.go` - Tenant-local organization membership management
+- `api/platform/membership.go` - Database-local organization membership management
 - `api/platform/users.go` - User management
 - `api/platform/sessions.go` - Session management
 
@@ -788,7 +781,7 @@ Database: <type>:<name>                 # Target database
 2. Push via CLI - verify definition created with version in `atombase_definitions`
 3. Verify `atombase_definitions_history` has schema + access JSON
 4. Create database via API - verify entry in `atombase_databases` with `owner_id` set
-5. Add user membership with role in the organization tenant `atombase_membership`
+5. Add user membership with role in the organization database's `atombase_membership`
 6. Make data requests with different roles - verify RBAC enforcement
 7. Update schema, push again - verify new version in history
 8. Access database - verify lazy migration and `definition_version` update

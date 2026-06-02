@@ -1,23 +1,23 @@
-# AtomBase
+# Atombase
 
 **Launch your SaaS without rebuilding the backend.**
 
-AtomBase is the SaaS-native backend for a database-per-tenant architecture, built on distributed SQLite.
+Atombase is the SaaS-native backend for a definition-driven database architecture, built on distributed SQLite.
 
 > [!CAUTION]
 > **Prototype software - not complete.**
-> AtomBase is still under active development and is not production-ready. Expect missing features, API changes, and rough edges.
+> Atombase is still under active development and is not production-ready. Expect missing features, API changes, and rough edges.
 
-## What is AtomBase?
+## What is Atombase?
 
-AtomBase helps you run one database per tenant while still feeling like you are working with a single backend.
+Atombase helps you run many isolated databases from versioned definitions while still feeling like you are working with a single backend.
 
 - **Projects**: run one backend with one primary metadata database.
 - **Definitions**: version database schemas, access policies, and provisioning rules in code.
 - **Databases**: create isolated SQLite/Turso databases from definitions.
 - **Session/Auth Context**: resolve service, anonymous, user, and organization access.
 - **Queries**: run policy-aware data operations over HTTP or the SDK.
-- **Managed Migrations**: keep tenant schemas in sync through definition versions.
+- **Managed Migrations**: keep database schemas in sync through definition versions.
 - **Authentication**: built-in magic-link auth and session-backed browser access.
 - **Storage**: coming soon.
 - **AI**: coming soon.
@@ -51,8 +51,8 @@ cd api
 TURSO_API_KEY="your-turso-key"
 TURSO_ORGANIZATION="your-turso-org"
 
-ATOMICBASE_CORS_ORIGINS="http://localhost:3000,http://localhost:5173"
-ATOMICBASE_API_KEY="your-api-key"
+ATOMBASE_CORS_ORIGINS="http://localhost:3000,http://localhost:5173"
+ATOMBASE_API_KEY="your-api-key"
 ```
 
 ### 2) Start the API
@@ -66,19 +66,19 @@ By default the server runs at `http://localhost:8080`.
 ### 3) Install the SDK and definitions package
 
 ```bash
-npm install @atomicbase/sdk @atomicbase/definitions
+npm install @atombase/sdk @atombase/definitions
 ```
 
 ### 4) Initialize project config
 
 ```bash
-npx atomicbase init
+npx atombase init
 ```
 
 ### 5) Define and push a definition
 
 ```typescript
-import { defineGlobal, defineSchema, defineAccess, defineTable, c, allow } from "@atomicbase/definitions";
+import { defineGlobal, defineSchema, defineAccess, defineTable, c, allow } from "@atombase/definitions";
 
 const schema = defineSchema({
   users: defineTable({
@@ -102,13 +102,13 @@ export default defineGlobal({
 ```
 
 ```bash
-npx atomicbase definitions push
+npx atombase definitions push
 ```
 
 ### 6) Create a database
 
 ```typescript
-import { createClient } from "@atomicbase/sdk";
+import { createClient } from "@atombase/sdk";
 
 const client = createClient({
   url: "http://localhost:8080",
@@ -121,9 +121,9 @@ await client.databases.create({ id: "acme-corp", definition: "my-app" });
 ### 7) Query data
 
 ```typescript
-import { eq } from "@atomicbase/sdk";
+import { eq } from "@atombase/sdk";
 
-const acme = client.database("global:acme-corp");
+const acme = client.database("acme-corp");
 
 await acme.from("users").insert({ name: "Alice", email: "alice@example.com" });
 const { data } = await acme.from("users").select();
@@ -146,7 +146,7 @@ For browser apps, the intended path is:
 9. use `client.database()` with no `Database` header to access the current user's database directly from the browser
 
 ```typescript
-import { createClient } from "@atomicbase/sdk";
+import { createClient } from "@atombase/sdk";
 
 const baseClient = createClient({ url: "http://localhost:8080" });
 const tokenFromEmail = new URL(window.location.href).searchParams.get("token");
@@ -171,7 +171,7 @@ const todoDb = client.database();
 
 ## Core Model
 
-AtomBase uses one vocabulary everywhere:
+Atombase uses one vocabulary everywhere:
 
 ```text
 Project -> Definition -> Database -> Session/Auth Context -> Query
@@ -181,7 +181,7 @@ See [docs/core-model.md](./docs/core-model.md) for the canonical noun model. His
 
 ## Key Ideas
 
-- **Database isolation by default**: each concrete tenant or app boundary gets its own database.
+- **Database isolation by default**: each concrete app, user, or organization boundary gets its own database.
 - **Definitions keep systems aligned**: define once, roll databases forward with migrations.
 - **Strict versions + lazy sync**: out-of-date databases are synchronized when accessed.
 - **Simple operational model**: single Go service with a focused API surface.
@@ -190,12 +190,12 @@ See [docs/core-model.md](./docs/core-model.md) for the canonical noun model. His
 
 - Enterprise authentication (orgs, RBAC, SSO, RLS)
 - Storage APIs and object workflows
-- AI APIs with tenant-scoped context
+- AI APIs with database-scoped context
 - Dashboard and improved operator tooling
 
 ## Examples
 
-- [react-todo](./examples/react-todo) - Next.js todo example using magic-link auth, organization-scoped databases, and direct SDK data access
+- [react-todo](./examples/react-todo) - Next.js todo example using magic-link auth, organization databases, and direct SDK data access
 
 ## Contributing
 
@@ -203,4 +203,4 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## License
 
-AtomBase is [fair-source](https://fair.io) licensed under [FSL-1.1-MIT](./LICENSE). You can use, modify, and self-host the software freely for your own applications. The only restriction is offering AtomBase as a competing hosted service. The license converts to MIT after two years.
+Atombase is [fair-source](https://fair.io) licensed under [FSL-1.1-MIT](./LICENSE). You can use, modify, and self-host the software freely for your own applications. The only restriction is offering Atombase as a competing hosted service. The license converts to MIT after two years.

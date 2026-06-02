@@ -1,3 +1,3 @@
-module atomicbase/full-test
+module atombase/full-test
 
 go 1.24

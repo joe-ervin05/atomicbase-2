@@ -1,6 +1,6 @@
-# AtomBase Definition Model
+# Atombase Definition Model
 
-AtomBase's canonical model is:
+Atombase's canonical model is:
 
 ```text
 Project -> Definition -> Database -> Session/Auth Context -> Query
@@ -30,7 +30,7 @@ All three share the same schema authoring model. The difference is how databases
 ### Global
 
 - Many databases can use the same global definition.
-- Data requests target them with `Database: global:<database-id>`.
+- Data requests target them with `Database: <database-id>`.
 - Access policies usually reason about `auth.status` and optionally `auth.id`.
 
 ### User
@@ -41,13 +41,13 @@ All three share the same schema authoring model. The difference is how databases
 
 ### Organization
 
-- Each organization has one required tenant database.
-- Data requests target it with `Database: org:<organization-id>`.
-- Membership is tenant-local, and org roles plus management rules come from the definition.
+- Each organization has one required database.
+- Organization responses include `databaseId`; data requests target that concrete database with `Database: <database-id>`.
+- Membership is database-local, and org roles plus management rules come from the definition.
 
 ## Schema authoring
 
-Definitions are authored with `@atomicbase/definitions`.
+Definitions are authored with `@atombase/definitions`.
 
 ```ts
 import {
@@ -57,7 +57,7 @@ import {
   defineSchema,
   defineTable,
   defineUser,
-} from "@atomicbase/definitions";
+} from "@atombase/definitions";
 
 const schema = defineSchema({
   todos: defineTable({
@@ -127,7 +127,7 @@ import {
   eq,
   isNull,
   c,
-} from "@atomicbase/definitions";
+} from "@atombase/definitions";
 
 const schema = defineSchema({
   todos: defineTable({
@@ -192,7 +192,7 @@ import {
   allow,
   eq,
   c,
-} from "@atomicbase/definitions";
+} from "@atombase/definitions";
 
 const schema = defineSchema({
   todos: defineTable({
@@ -229,7 +229,7 @@ import {
   defineTable,
   inList,
   c,
-} from "@atomicbase/definitions";
+} from "@atombase/definitions";
 
 const schema = defineSchema({
   projects: defineTable({
@@ -290,4 +290,4 @@ The intended browser-app flow for a user definition is:
 6. self-provision with `client.auth.createDatabase({ definition })` if the user has no database yet
 7. query with `client.database()` directly from the browser
 
-That is the main AtomBase BaaS path. Security comes from session auth plus definition-driven access and provisioning policies, not from hiding the API behind a custom app backend.
+That is the main Atombase BaaS path. Security comes from session auth plus definition-driven access and provisioning policies, not from hiding the API behind a custom app backend.

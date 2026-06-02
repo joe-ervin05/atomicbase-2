@@ -1,4 +1,4 @@
-import { createClient } from "@atomicbase/sdk";
+import { createClient } from "@atombase/sdk";
 
 const ownerClient = createClient({
   url: "http://localhost:8080",
@@ -29,9 +29,14 @@ async function inviteFlow() {
     throw accepted.error;
   }
 
-  // 4. The new member can now query the org database.
+  const org = await invitedClient.orgs.get("acme");
+  if (org.error) {
+    throw org.error;
+  }
+
+  // 4. The new member can now query the organization database by database id.
   const orgData = await invitedClient
-    .database("org:acme")
+    .database(org.data.organization.databaseId)
     .from("projects")
     .select("id", "name")
     .limit(10);

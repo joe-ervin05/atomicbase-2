@@ -8,8 +8,8 @@ import type {
   TableDefinition,
   ColumnDefinition,
   IndexDefinition,
-} from "@atomicbase/definitions";
-import type { AtomicbaseConfig } from "./config.js";
+} from "@atombase/definitions";
+import type { AtombaseConfig } from "./config.js";
 
 export type { TableDefinition, ColumnDefinition, IndexDefinition };
 
@@ -141,7 +141,7 @@ export class ApiClient {
   private apiKey?: string;
   private insecure: boolean;
 
-  constructor(config: Required<AtomicbaseConfig>) {
+  constructor(config: Required<AtombaseConfig>) {
     this.baseUrl = config.url.replace(/\/$/, "");
     this.apiKey = config.apiKey || undefined;
     this.insecure = config.insecure ?? false;

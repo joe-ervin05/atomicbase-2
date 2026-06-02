@@ -1,15 +1,15 @@
-# AtomBase API
+# Atombase API
 
-The Go backend for AtomBase. It serves a definition-first multi-database API on top of SQLite and Turso.
+The Go backend for Atombase. It serves a definition-first multi-database API on top of SQLite and Turso.
 
 ## Overview
 
-AtomBase exposes two HTTP surfaces:
+Atombase exposes two HTTP surfaces:
 
-- `Data API` at `/data/*` for tenant-scoped CRUD and query execution
+- `Data API` at `/data/*` for database-scoped CRUD and query execution
 - `Platform API` at `/platform/*` for definition storage, versioning, and database provisioning
 
-The primary database stores identity, definitions, database routing metadata, access policies, and migration history. Tenant databases store application data. For organization databases, tenant-local membership is the source of truth for authorization.
+The primary database stores identity, definitions, database routing metadata, access policies, and migration history. Application databases store business data. For organization databases, database-local membership is the source of truth for authorization.
 
 The canonical abstraction is:
 
@@ -30,13 +30,13 @@ See [../docs/core-model.md](../docs/core-model.md). `global`, `user`, and `organ
 ### Build
 
 ```bash
-CGO_ENABLED=1 go build -tags fts5 -o bin/atomicbase
+CGO_ENABLED=1 go build -tags fts5 -o bin/atombase
 ```
 
 ### Run
 
 ```bash
-./bin/atomicbase
+./bin/atombase
 ```
 
 The server listens on `http://localhost:8080` by default.
@@ -61,19 +61,19 @@ CGO_ENABLED=1 go test -tags fts5 ./...
 | `DB_PATH` | `atomicdata/primary.db` | Local primary database path |
 | `DATA_DIR` | `atomicdata` | Local data directory |
 | `INIT_SCHEMA` | `true` | Initialize the primary schema on startup |
-| `ATOMICBASE_REQUEST_TIMEOUT` | `30` | Request timeout in seconds |
-| `ATOMICBASE_API_KEY` | empty | Service API key for platform access |
-| `ATOMICBASE_CORS_ORIGINS` | empty | Allowed CORS origins |
-| `ATOMICBASE_MAX_ORGANIZATIONS_PER_USER` | `3` | Max orgs a session user can own (`0` disables the cap) |
-| `ATOMICBASE_TRUSTED_PROXY_CIDRS` | empty | Comma-separated proxy IPs/CIDRs allowed to supply `X-Forwarded-For` |
+| `ATOMBASE_REQUEST_TIMEOUT` | `30` | Request timeout in seconds |
+| `ATOMBASE_API_KEY` | empty | Service API key for platform access |
+| `ATOMBASE_CORS_ORIGINS` | empty | Allowed CORS origins |
+| `ATOMBASE_MAX_ORGANIZATIONS_PER_USER` | `3` | Max orgs a session user can own (`0` disables the cap) |
+| `ATOMBASE_TRUSTED_PROXY_CIDRS` | empty | Comma-separated proxy IPs/CIDRs allowed to supply `X-Forwarded-For` |
 
 ### Query Limits
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `ATOMICBASE_MAX_QUERY_DEPTH` | `5` | Max nested relation depth |
-| `ATOMICBASE_MAX_QUERY_LIMIT` | `1000` | Max rows per query |
-| `ATOMICBASE_DEFAULT_LIMIT` | `100` | Default row limit |
+| `ATOMBASE_MAX_QUERY_DEPTH` | `5` | Max nested relation depth |
+| `ATOMBASE_MAX_QUERY_LIMIT` | `1000` | Max rows per query |
+| `ATOMBASE_DEFAULT_LIMIT` | `100` | Default row limit |
 
 ### Turso
 
@@ -94,9 +94,9 @@ CGO_ENABLED=1 go test -tags fts5 ./...
 | `CACHE_REDIS_PASSWORD` | empty | Redis cache password |
 | `CACHE_SQLITE_PATH` | empty | SQLite-backed cache path |
 | `CACHE_KEY_PREFIX` | empty | Cache key prefix |
-| `ATOMICBASE_ACTIVITY_LOG_ENABLED` | `false` | Enable activity logging |
-| `ATOMICBASE_ACTIVITY_LOG_PATH` | `atomicdata/logs.db` | Activity log DB path |
-| `ATOMICBASE_ACTIVITY_LOG_RETENTION` | `30` | Activity log retention in days |
+| `ATOMBASE_ACTIVITY_LOG_ENABLED` | `false` | Enable activity logging |
+| `ATOMBASE_ACTIVITY_LOG_PATH` | `atomicdata/logs.db` | Activity log DB path |
+| `ATOMBASE_ACTIVITY_LOG_RETENTION` | `30` | Activity log retention in days |
 
 ### Email
 
@@ -115,7 +115,7 @@ CGO_ENABLED=1 go test -tags fts5 ./...
 Platform routes require a service bearer token:
 
 ```http
-Authorization: Bearer service.<ATOMICBASE_API_KEY>
+Authorization: Bearer service.<ATOMBASE_API_KEY>
 ```
 
 ### Data API
@@ -123,17 +123,17 @@ Authorization: Bearer service.<ATOMICBASE_API_KEY>
 Data routes accept:
 
 - no `Authorization` header for anonymous requests
-- `Authorization: Bearer service.<ATOMICBASE_API_KEY>` for service access
+- `Authorization: Bearer service.<ATOMBASE_API_KEY>` for service access
 - `Authorization: Bearer <session-id>.<secret>` for session-backed user access
 
-The auth middleware injects only the caller identity. Definitions and tenant-local policies decide what the caller can do.
+The auth middleware injects only the caller identity. Definitions and database-local policies decide what the caller can do.
 
 ### Auth API
 
 Auth routes accept:
 
 - `Authorization: Bearer <session-id>.<secret>` for member-scoped organization actions
-- `Authorization: Bearer service.<ATOMICBASE_API_KEY>` for service-scoped organization actions
+- `Authorization: Bearer service.<ATOMBASE_API_KEY>` for service-scoped organization actions
 
 For session-backed callers, organization existence is only confirmed to members of that organization. Non-members get the same authorization failure for both missing and real organizations. Service auth can manage organizations directly.
 
@@ -141,7 +141,7 @@ Organization invite creation sends an email to the invited address using `AUTH_I
 
 User database provisioning is session-backed through `POST /auth/me/database`. That route creates the caller's one allowed user database from a user definition and updates `/auth/me` to include `databaseId`.
 
-Session-backed `POST /auth/orgs` is also capped by `ATOMICBASE_MAX_ORGANIZATIONS_PER_USER`. Service auth bypasses that quota.
+Session-backed `POST /auth/orgs` is also capped by `ATOMBASE_MAX_ORGANIZATIONS_PER_USER`. Service auth bypasses that quota.
 
 ### Browser app pattern
 
@@ -156,7 +156,7 @@ The intended browser-app flow is:
 7. if `databaseId` is missing, call `POST /auth/me/database`
 8. call the data API directly from the browser with that session token
 
-`AUTH_MAGIC_LINK_CALLBACK_URL` is required for this flow. AtomBase emails that exact app URL with the magic-link `token` attached as a query param. There is no fallback redirect because the callback route must perform the app-specific auth completion step.
+`AUTH_MAGIC_LINK_CALLBACK_URL` is required for this flow. Atombase emails that exact app URL with the magic-link `token` attached as a query param. There is no fallback redirect because the callback route must perform the app-specific auth completion step.
 
 For the official browser example path, store the session token in `localStorage`, restore it on startup, and clear it on sign-out. Security comes from session auth plus definition-driven access and provisioning policies, not from proxying requests through a custom app backend.
 
@@ -165,19 +165,18 @@ For the official browser example path, store the session token in `localStorage`
 Data requests support these routing modes:
 
 - no `Database` header: use the authenticated user's own database
-- `global:<database-id>`
-- `org:<organization-id>`
+- `<database-id>`: use an explicit concrete database
 
 Examples:
 
 ```http
-Database: global:public-catalog-prod
-Database: org:org_123
+Database: public-catalog-prod
+Database: workspace-acme
 ```
 
 When the header is omitted, the primary database resolves the current session user to their linked user database. If the user does not have one, the request fails. Anonymous and service requests still require an explicit `Database` header.
 
-The primary database resolves that routing input into a concrete tenant database plus definition metadata.
+The primary database resolves that routing input into a concrete database plus definition metadata.
 
 ## Data API
 
@@ -211,7 +210,7 @@ Prefer: operation=insert, on-conflict=replace
 
 ```bash
 curl -X POST http://localhost:8080/data/query/projects \
-  -H "Database: org:org_123" \
+  -H "Database: workspace-acme" \
   -H "Prefer: operation=select, count=exact" \
   -H "Content-Type: application/json" \
   -d '{
@@ -226,7 +225,7 @@ curl -X POST http://localhost:8080/data/query/projects \
 
 ```bash
 curl -X POST http://localhost:8080/data/query/projects \
-  -H "Database: org:org_123" \
+  -H "Database: workspace-acme" \
   -H "Prefer: operation=insert" \
   -H "Content-Type: application/json" \
   -d '{
@@ -241,7 +240,7 @@ Upsert data must include every primary key column. If a row conflicts with an ex
 
 ```bash
 curl -X POST http://localhost:8080/data/query/projects \
-  -H "Database: org:org_123" \
+  -H "Database: workspace-acme" \
   -H "Prefer: operation=insert, on-conflict=replace" \
   -H "Content-Type: application/json" \
   -d '{
@@ -254,7 +253,7 @@ curl -X POST http://localhost:8080/data/query/projects \
 
 ```bash
 curl -X POST http://localhost:8080/data/query/projects \
-  -H "Database: org:org_123" \
+  -H "Database: workspace-acme" \
   -H "Prefer: operation=update" \
   -H "Content-Type: application/json" \
   -d '{
@@ -267,7 +266,7 @@ curl -X POST http://localhost:8080/data/query/projects \
 
 ```bash
 curl -X POST http://localhost:8080/data/query/projects \
-  -H "Database: org:org_123" \
+  -H "Database: workspace-acme" \
   -H "Prefer: operation=delete" \
   -H "Content-Type: application/json" \
   -d '{
@@ -281,7 +280,7 @@ Batch requests are still supported, but they are not the long-term primary API s
 
 ```bash
 curl -X POST http://localhost:8080/data/batch \
-  -H "Database: org:org_123" \
+  -H "Database: workspace-acme" \
   -H "Content-Type: application/json" \
   -d '{
     "operations": [
@@ -304,8 +303,8 @@ curl -X POST http://localhost:8080/data/batch \
 - `where` is an array of filter objects
 - nested relation selects are resolved from foreign keys
 - `count=exact` returns `X-Total-Count`
-- definitions policies are compiled into the tenant query path before execution
-- lazy migrations run before normal query execution when a tenant database is behind its definition version
+- definition policies are compiled into the database query path before execution
+- lazy migrations run before normal query execution when a database is behind its definition version
 
 ## Platform API
 
@@ -402,7 +401,7 @@ Definition pushes:
 - diff the current and next schema
 - generate migration SQL
 - run a local in-memory migration probe
-- probe the first existing tenant database before publish
+- probe the first existing database before publish
 - store migration rows in the primary database
 
 ### Create Database
@@ -426,7 +425,7 @@ Definition type determines provisioning semantics:
 - `user`: one database per user
 - `organization`: one database per organization, managed through the auth API
 
-Organization databases get tenant-local `atombase_membership` storage created during provisioning.
+Organization databases get database-local `atombase_membership` storage created during provisioning.
 
 The platform database endpoint no longer provisions organization databases directly. Use `POST /auth/orgs` instead.
 
@@ -513,7 +512,7 @@ curl -X POST http://localhost:8080/auth/orgs/org_123/transfer-ownership \
   }'
 ```
 
-Transfer ownership updates both primary organization ownership and tenant-local owner membership.
+Transfer ownership updates both primary organization ownership and database-local owner membership.
 
 ## Architecture
 
@@ -544,26 +543,26 @@ api/
 ### Runtime Model
 
 - primary auth resolves who the caller is
-- primary metadata resolves which tenant database and definition apply
-- definitions compile access policies into the tenant SQL path
+- primary metadata resolves which database and definition apply
+- definitions compile access policies into the database SQL path
 - definitions also drive org management permissions through stored `management` policies
-- organization membership is enforced inside tenant SQL, not through a separate primary lookup
-- each tenant request is treated as a single billed request target
+- organization membership is enforced inside database SQL, not through a separate primary lookup
+- each data request is treated as a single billed request target
 
 ### Storage Model
 
 - `primary database`: users, sessions, definitions, definition history, access policies, database registry, migration rows
-- `tenant databases`: business tables and tenant-owned authorization state
-- `organization tenants`: tenant-local `atombase_membership`
+- `application databases`: business tables and database-owned authorization state
+- `organization databases`: database-local `atombase_membership`
 
 ## Current Strengths
 
 - definitions-first runtime and storage model
-- per-tenant isolation with Turso-backed databases
-- policy-aware data API with tenant-side org membership enforcement
+- per-database isolation with Turso-backed databases
+- policy-aware data API with database-side org membership enforcement
 - auth API with definition-driven org management and ownership transfer
 - lazy migrations plus definition version history
-- local and first-tenant probes during definition pushes
+- local and first-database probes during definition pushes
 
 ## Current Limitations
 
@@ -576,4 +575,4 @@ api/
 - `GET /health` is available without auth
 - `GET /docs` serves Swagger UI
 - request logging, activity logging, and cache backends are configurable
-- production deployments should set `ATOMICBASE_API_KEY`, `TOKEN_ENCRYPTION_KEY`, and durable storage explicitly
+- production deployments should set `ATOMBASE_API_KEY`, `TOKEN_ENCRYPTION_KEY`, and durable storage explicitly

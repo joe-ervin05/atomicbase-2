@@ -53,7 +53,7 @@ func ValidateColumnName(name string) error {
 	return nil
 }
 
-// ValidateResourceName validates platform resource names such as template and database names.
+// ValidateResourceName validates platform resource names such as definition and database names.
 // Valid names are 1-64 chars and may contain only lowercase letters, numbers, and dashes.
 func ValidateResourceName(name string) (code, message, hint string) {
 	const baseHint = "Names must be 1-64 characters, containing only lowercase letters, numbers, and dashes."

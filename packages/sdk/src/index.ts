@@ -2,8 +2,7 @@
 // Client
 // =============================================================================
 
-export { AtomicbaseClient, DatabaseClient, createClient } from "./AtomicbaseClient.js";
-export { AtomicbaseClient as AtomBaseClient } from "./AtomicbaseClient.js";
+export { AtombaseClient, DatabaseClient, createClient } from "./AtombaseClient.js";
 export { DatabasesClient } from "./DatabasesClient.js";
 export { DefinitionsClient } from "./DefinitionsClient.js";
 export { AuthClient, OrganizationAuthClient } from "./AuthClient.js";
@@ -12,17 +11,14 @@ export { AuthClient, OrganizationAuthClient } from "./AuthClient.js";
 // Builders (for advanced usage / extension)
 // =============================================================================
 
-export { AtomicbaseBuilder } from "./AtomicbaseBuilder.js";
-export { AtomicbaseQueryBuilder } from "./AtomicbaseQueryBuilder.js";
-export { AtomicbaseBuilder as AtomBaseBuilder } from "./AtomicbaseBuilder.js";
-export { AtomicbaseQueryBuilder as AtomBaseQueryBuilder } from "./AtomicbaseQueryBuilder.js";
+export { AtombaseBuilder } from "./AtombaseBuilder.js";
+export { AtombaseQueryBuilder } from "./AtombaseQueryBuilder.js";
 
 // =============================================================================
 // Error
 // =============================================================================
 
-export { AtomicbaseError } from "./AtomicbaseError.js";
-export { AtomicbaseError as AtomBaseError } from "./AtomicbaseError.js";
+export { AtombaseError } from "./AtombaseError.js";
 
 // =============================================================================
 // Filter Functions (for complex conditions with where())
@@ -64,16 +60,16 @@ export {
 
 export type {
   // Response types (discriminated unions)
-  AtomicbaseResponse,
-  AtomicbaseResponseSuccess,
-  AtomicbaseResponseFailure,
-  AtomicbaseResponseWithCount,
+  AtombaseResponse,
+  AtombaseResponseSuccess,
+  AtombaseResponseFailure,
+  AtombaseResponseWithCount,
   // Batch types
   BatchOperation,
   BatchResponse,
-  AtomicbaseBatchResponse,
+  AtombaseBatchResponse,
   // Configuration
-  AtomicbaseClientOptions,
+  AtombaseClientOptions,
   DefinitionType,
   GeneratedColumn,
   ColumnDefinition,
@@ -114,13 +110,4 @@ export type {
   UpdateOrganizationMemberOptions,
   UpdateOrganizationOptions,
   TransferOrganizationOwnershipOptions,
-} from "./types.js";
-
-export type {
-  AtomicbaseResponse as AtomBaseResponse,
-  AtomicbaseResponseSuccess as AtomBaseResponseSuccess,
-  AtomicbaseResponseFailure as AtomBaseResponseFailure,
-  AtomicbaseResponseWithCount as AtomBaseResponseWithCount,
-  AtomicbaseBatchResponse as AtomBaseBatchResponse,
-  AtomicbaseClientOptions as AtomBaseClientOptions,
 } from "./types.js";

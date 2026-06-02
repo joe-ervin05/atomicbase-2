@@ -1,6 +1,6 @@
-# Contributing to AtomBase
+# Contributing to Atombase
 
-Thanks for your interest in contributing to AtomBase! This document outlines the process for contributing to this project.
+Thanks for your interest in contributing to Atombase! This document outlines the process for contributing to this project.
 
 ## Getting Started
 
@@ -14,8 +14,8 @@ Thanks for your interest in contributing to AtomBase! This document outlines the
 
 1. Fork and clone the repository:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/atomicbase-2.git
-   cd atomicbase-2
+   git clone https://github.com/YOUR_USERNAME/atombase-2.git
+   cd atombase-2
    ```
 
 2. Install dependencies:
@@ -48,7 +48,7 @@ make build
 ```
 or
 ```bash
-CGO_ENABLED=1 go build -tags fts5 -o bin/atomicbase
+CGO_ENABLED=1 go build -tags fts5 -o bin/atombase
 ```
 
 Run tests

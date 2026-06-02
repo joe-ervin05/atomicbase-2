@@ -15,6 +15,7 @@ import (
 
 type Organization struct {
 	ID         string          `json:"id"`
+	DatabaseID string          `json:"databaseId"`
 	Name       string          `json:"name"`
 	OwnerID    string          `json:"ownerId"`
 	MaxMembers *int            `json:"maxMembers,omitempty"`
@@ -244,7 +245,7 @@ func (api *API) listOrganizations(ctx context.Context, actor *orgActor) ([]Organ
 		return nil, errors.New("auth api not initialized")
 	}
 	rows, err := api.db.QueryContext(ctx, `
-		SELECT id, name, owner_id, max_members, metadata, created_at, updated_at
+		SELECT id, database_id, name, owner_id, max_members, metadata, created_at, updated_at
 		FROM atombase_organizations
 		ORDER BY created_at ASC, id ASC
 	`)
@@ -272,7 +273,7 @@ func (api *API) listOrganizations(ctx context.Context, actor *orgActor) ([]Organ
 	}
 	var visible []Organization
 	for _, org := range orgs {
-		db, _, err := api.connOrganizationTenant(ctx, actor, org.ID)
+		db, _, err := api.connOrganizationDatabase(ctx, actor, org.ID)
 		if err != nil {
 			continue
 		}
@@ -292,7 +293,7 @@ func (api *API) getOrganization(ctx context.Context, actor *orgActor, organizati
 	if actor.IsService {
 		return api.getOrganizationRecord(ctx, organizationID)
 	}
-	db, _, err := api.connOrganizationTenant(ctx, actor, organizationID)
+	db, _, err := api.connOrganizationDatabase(ctx, actor, organizationID)
 	if err != nil {
 		return nil, err
 	}
@@ -366,14 +367,14 @@ func (api *API) transferOrganizationOwnership(ctx context.Context, actor *orgAct
 	if req.UserID == "" {
 		return nil, tools.InvalidRequestErr("userId is required")
 	}
-	org, tenantDB, err := api.authorizeOrganizationAction(ctx, actor, organizationID, "transferOwnership")
+	org, databaseDB, err := api.authorizeOrganizationAction(ctx, actor, organizationID, "transferOwnership")
 	if err != nil {
 		return nil, err
 	}
-	defer tenantDB.Close()
+	defer databaseDB.Close()
 
 	now := time.Now().UTC().Format(time.RFC3339)
-	if _, err := tenantDB.ExecContext(ctx, `
+	if _, err := databaseDB.ExecContext(ctx, `
 		INSERT INTO atombase_membership (user_id, role, status, created_at)
 		VALUES (?, 'owner', 'active', ?)
 		ON CONFLICT(user_id) DO UPDATE SET
@@ -395,33 +396,33 @@ func (api *API) transferOrganizationOwnership(ctx context.Context, actor *orgAct
 }
 
 func (api *API) authorizeOrganizationAction(ctx context.Context, actor *orgActor, organizationID, action string) (*Organization, *sql.DB, error) {
-	tenantDB, management, err := api.connOrganizationTenant(ctx, actor, organizationID)
+	databaseDB, management, err := api.connOrganizationDatabase(ctx, actor, organizationID)
 	if err != nil {
 		return nil, nil, err
 	}
 	if actor.IsService {
 		org, err := api.getOrganizationRecord(ctx, organizationID)
 		if err != nil {
-			tenantDB.Close()
+			databaseDB.Close()
 			return nil, nil, err
 		}
-		return org, tenantDB, nil
+		return org, databaseDB, nil
 	}
-	actorRole, err := lookupOrganizationMemberRole(ctx, tenantDB, actor.UserID)
+	actorRole, err := lookupOrganizationMemberRole(ctx, databaseDB, actor.UserID)
 	if err != nil {
-		tenantDB.Close()
+		databaseDB.Close()
 		return nil, nil, err
 	}
 	if !managementAllows(management, actorRole, action, "") {
-		tenantDB.Close()
+		databaseDB.Close()
 		return nil, nil, tools.UnauthorizedErr("organization action is not allowed")
 	}
 	org, err := api.getOrganizationRecord(ctx, organizationID)
 	if err != nil {
-		tenantDB.Close()
+		databaseDB.Close()
 		return nil, nil, err
 	}
-	return org, tenantDB, nil
+	return org, databaseDB, nil
 }
 
 func (api *API) getOrganizationRecord(ctx context.Context, organizationID string) (*Organization, error) {
@@ -429,7 +430,7 @@ func (api *API) getOrganizationRecord(ctx context.Context, organizationID string
 		return nil, errors.New("auth api not initialized")
 	}
 	row := api.db.QueryRowContext(ctx, `
-		SELECT id, name, owner_id, max_members, metadata, created_at, updated_at
+		SELECT id, database_id, name, owner_id, max_members, metadata, created_at, updated_at
 		FROM atombase_organizations
 		WHERE id = ?
 	`, organizationID)
@@ -452,7 +453,7 @@ func scanOrganization(row organizationScanner) (*Organization, error) {
 	var org Organization
 	var maxMembers sql.NullInt64
 	var metadata string
-	if err := row.Scan(&org.ID, &org.Name, &org.OwnerID, &maxMembers, &metadata, &org.CreatedAt, &org.UpdatedAt); err != nil {
+	if err := row.Scan(&org.ID, &org.DatabaseID, &org.Name, &org.OwnerID, &maxMembers, &metadata, &org.CreatedAt, &org.UpdatedAt); err != nil {
 		return nil, err
 	}
 	if maxMembers.Valid {

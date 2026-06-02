@@ -113,7 +113,7 @@ func initPrimaryDBLocal() (*sql.DB, error) {
 }
 
 func logStartupInfo() {
-	fmt.Println("=== Atomicbase ===")
+	fmt.Println("=== Atombase ===")
 	fmt.Printf("Port:            %s\n", config.Cfg.Port)
 	if config.Cfg.PrimaryDBName != "" {
 		fmt.Printf("Primary DB:      %s (Turso)\n", config.Cfg.PrimaryDBName)

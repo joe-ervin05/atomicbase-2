@@ -30,7 +30,7 @@ async function listDatabases(): Promise<void> {
     const databases = await api.listDatabases();
     if (databases.length === 0) {
       console.log("No databases found.");
-      console.log("\nCreate one with: atomicbase databases create <id> --definition <definition>");
+      console.log("\nCreate one with: atombase databases create <id> --definition <definition>");
       return;
     }
 

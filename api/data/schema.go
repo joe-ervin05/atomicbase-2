@@ -181,7 +181,7 @@ func (schema SchemaCache) HasFTSIndex(table string) bool {
 }
 
 // BuildColumnTypeMap builds a flat map of column name -> type from all tables.
-// Used by QueryMap to determine proper scan types for typeless columns in tenant databases.
+// Used by QueryMap to determine proper scan types for typeless columns in databases.
 // Types are normalized to uppercase (TEXT, INTEGER, REAL, BLOB) for consistent matching.
 // For columns with the same name in different tables, the type is taken from the first table found.
 func (schema SchemaCache) BuildColumnTypeMap() map[string]string {

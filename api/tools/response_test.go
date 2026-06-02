@@ -200,10 +200,10 @@ func TestBuildAPIError(t *testing.T) {
 		},
 		{
 			name:       "platform busy",
-			err:        ErrAtomicbaseBusy,
+			err:        ErrAtombaseBusy,
 			wantStatus: http.StatusConflict,
-			wantCode:   CodeAtomicbaseBusy,
-			wantMsg:    ErrAtomicbaseBusy.Error(),
+			wantCode:   CodeAtombaseBusy,
+			wantMsg:    ErrAtombaseBusy.Error(),
 		},
 		{
 			name:       "platform database exists",

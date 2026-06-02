@@ -8,8 +8,8 @@ import (
 	"github.com/atombasedev/atombase/tools"
 )
 
-// Batch executes multiple operations atomically within a tenant database transaction.
-func (dao *TenantConnection) Batch(ctx context.Context, req BatchRequest) (BatchResponse, error) {
+// Batch executes multiple operations atomically within a database transaction.
+func (dao *DatabaseConnection) Batch(ctx context.Context, req BatchRequest) (BatchResponse, error) {
 	if len(req.Operations) == 0 {
 		return BatchResponse{Results: []any{}}, nil
 	}
@@ -42,7 +42,7 @@ func (dao *TenantConnection) Batch(ctx context.Context, req BatchRequest) (Batch
 }
 
 // executeOperation executes a single batch operation within a transaction.
-func (dao *TenantConnection) executeOperation(ctx context.Context, tx Executor, op BatchOperation) (any, error) {
+func (dao *DatabaseConnection) executeOperation(ctx context.Context, tx Executor, op BatchOperation) (any, error) {
 	switch op.Operation {
 	case "select":
 		var query SelectQuery

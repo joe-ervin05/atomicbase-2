@@ -110,7 +110,7 @@ func (api *API) handleAcceptOrganizationInvite(w http.ResponseWriter, r *http.Re
 }
 
 func (api *API) listOrganizationInvites(ctx context.Context, actor *orgActor, organizationID string) ([]OrganizationInvite, error) {
-	db, _, err := api.connOrganizationTenant(ctx, actor, organizationID)
+	db, _, err := api.connOrganizationDatabase(ctx, actor, organizationID)
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +170,7 @@ func (api *API) createOrganizationInvite(ctx context.Context, actor *orgActor, o
 		return nil, tools.InvalidRequestErr("expiresAt must be RFC3339")
 	}
 
-	db, management, err := api.connOrganizationTenant(ctx, actor, organizationID)
+	db, management, err := api.connOrganizationDatabase(ctx, actor, organizationID)
 	if err != nil {
 		return nil, err
 	}
@@ -235,7 +235,7 @@ func (api *API) createOrganizationInvite(ctx context.Context, actor *orgActor, o
 }
 
 func (api *API) deleteOrganizationInvite(ctx context.Context, actor *orgActor, organizationID, inviteID string) error {
-	db, management, err := api.connOrganizationTenant(ctx, actor, organizationID)
+	db, management, err := api.connOrganizationDatabase(ctx, actor, organizationID)
 	if err != nil {
 		return err
 	}
@@ -284,7 +284,7 @@ func (api *API) acceptOrganizationInvite(ctx context.Context, actor *orgActor, o
 	if err != nil {
 		return nil, err
 	}
-	db, _, err := api.connOrganizationTenant(ctx, actor, organizationID)
+	db, _, err := api.connOrganizationDatabase(ctx, actor, organizationID)
 	if err != nil {
 		return nil, tools.UnauthorizedErr("organization invite is invalid")
 	}

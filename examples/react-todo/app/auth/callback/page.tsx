@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LoaderCircle } from "lucide-react";
 import {
@@ -9,7 +10,7 @@ import {
   extractMagicLinkToken,
   clearMagicLinkTokenFromURL,
   setStoredSessionToken,
-} from "@/lib/atomicbase";
+} from "@/lib/atombase";
 
 export default function AuthCallbackPage() {
   const router = useRouter();
@@ -50,12 +51,12 @@ export default function AuthCallbackPage() {
         <div className="w-full max-w-sm rounded-lg border border-destructive/50 bg-destructive/10 p-6 text-center">
           <p className="text-sm font-medium text-destructive">Authentication failed</p>
           <p className="mt-2 text-sm text-muted-foreground">{error}</p>
-          <a
+          <Link
             href="/"
             className="mt-4 inline-block text-sm font-medium text-primary underline-offset-4 hover:underline"
           >
             Back to login
-          </a>
+          </Link>
         </div>
       </div>
     );

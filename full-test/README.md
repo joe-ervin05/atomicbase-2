@@ -1,8 +1,8 @@
 # full-test
 
-Deterministic simulation testing for the AtomBase Data API.
+Deterministic simulation testing for the Atombase Data API.
 
-This runner provisions a fresh, complex definition using `@atomicbase/definitions`, pushes it via the AtomBase CLI, creates a dedicated test database, and then runs a seeded stateful simulation against that database.
+This runner provisions a fresh, complex definition using `@atombase/definitions`, pushes it via the Atombase CLI, creates a dedicated test database, and then runs a seeded stateful simulation against that database.
 
 ## Why this exists
 
@@ -14,13 +14,13 @@ This runner provisions a fresh, complex definition using `@atomicbase/definition
 
 Before simulation starts, `full-test` creates a temporary workspace and uses the workspace packages directly:
 
-- invokes `packages/cli` through `pnpm --filter @atomicbase/cli exec atomicbase ...`
-- generates schema files that import `@atomicbase/definitions`
+- invokes `packages/cli` through `pnpm --filter @atombase/cli exec atombase ...`
+- generates schema files that import `@atombase/definitions`
 
 Then it runs:
 
-- `atomicbase definitions push <generated-definition-name>`
-- `atomicbase databases create <generated-database-name> --definition <generated-definition-name>`
+- `atombase definitions push <generated-definition-name>`
+- `atombase databases create <generated-database-name> --definition <generated-definition-name>`
 
 The generated definition is intentionally complex and includes:
 
@@ -37,15 +37,15 @@ Simulation targets the `todos` table in that provisioned database.
 
 ```bash
 cd full-test
-go run . -api-key "$ATOMICBASE_API_KEY" -token "$ATOMICBASE_API_KEY"
+go run . -api-key "$ATOMBASE_API_KEY" -token "$ATOMBASE_API_KEY"
 ```
 
 ## Common options
 
 ```bash
-go run . -api-key "$ATOMICBASE_API_KEY" -token "$ATOMICBASE_API_KEY" -seed 123 -steps 2000
+go run . -api-key "$ATOMBASE_API_KEY" -token "$ATOMBASE_API_KEY" -seed 123 -steps 2000
 go run . -loop
-go run . -base-url http://localhost:8080 -repo-root /path/to/atomicbase
+go run . -base-url http://localhost:8080 -repo-root /path/to/atombase
 go run . -keep-resources
 go run . -provision=false -database existing-db -table todos
 go run . -fail-on-4xx
@@ -53,14 +53,14 @@ go run . -fail-on-4xx
 
 ## Env vars
 
-- `ATOMICBASE_BASE_URL`
-- `ATOMICBASE_API_KEY`
-- `ATOMICBASE_DATABASE`
-- `ATOMICBASE_TABLE`
-- `ATOMICBASE_TOKEN`
-- `ATOMICBASE_ID_COLUMN`
-- `ATOMICBASE_TITLE_COLUMN`
-- `ATOMICBASE_COMPLETED_COLUMN`
+- `ATOMBASE_BASE_URL`
+- `ATOMBASE_API_KEY`
+- `ATOMBASE_DATABASE`
+- `ATOMBASE_TABLE`
+- `ATOMBASE_TOKEN`
+- `ATOMBASE_ID_COLUMN`
+- `ATOMBASE_TITLE_COLUMN`
+- `ATOMBASE_COMPLETED_COLUMN`
 - `SIM_REPO_ROOT`
 - `SIM_SEED`
 - `SIM_STEPS`
@@ -76,4 +76,4 @@ Flags always override env vars.
 
 On mismatch or unexpected HTTP failure, the runner exits with a replay command including the exact seed.
 
-By default, created definition/database resources are deleted after the run. Use `-keep-resources` to retain them for debugging.
+By default, the created database and temporary workspace are deleted after the run. Use `-keep-resources` to retain them for debugging.
